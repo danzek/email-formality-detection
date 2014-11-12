@@ -15,4 +15,4 @@ Group Members
 License
 -------
 
-MIT
+[MIT](https://github.com/danzek/email-formality-detection/blob/master/LICENSE)
