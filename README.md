@@ -1,7 +1,7 @@
 email-formality-detection
 =========================
 
-Detect whether an email is formally or informally written. This is a group project for CNIT499NLT Natural Language Technologies at Purdue University. The course instructor is Dr. Julia Taylor.
+Detect whether an email is formally or informally written. This uses the Enron email corpus, retrieved from [https://www.cs.cmu.edu/~./enron/](https://www.cs.cmu.edu/~./enron/). This is a group project for CNIT499NLT Natural Language Technologies at Purdue University. The course instructor is Dr. Julia Taylor.
 
 Group Members
 -------------
