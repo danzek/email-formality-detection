@@ -25,23 +25,45 @@ __status__ = "Development"
 
 
 from data.models import Corpus
+from features.simple_counts import character_count, word_count
 
 
 def main():
     c = Corpus()
-    features = {}
+    feature_dictionary = {}
+    classifier = ""
 
-    for email in c.fetch_all_emails():
-        # this is where all feature calls should go, e.g. pass the values needed to the feature
-        # features[email.id] = my_feature(email.sender, email.body)  # or write to file after each feature extraction
+    with open('features.libsvm', 'w') as ff:
+        for email in c.fetch_all_emails():
+            error = False
 
-        # sample code for how to retrieve values
-        print email.sender
-        print email.date
+            # add classification as formal = 1 and informal = 0 for libsvm file (requires all numeric values)
+            if email.classification == 'F':
+                classifier = "1"
+            elif email.classification == 'I':
+                classifier = "0"
+            else:
+                print 'Error: Unclassified Email, Invalid Sample'
+                error = True
 
-        # retrieving the body of the email is a special case; iterate through each line in your feature code like so:
-        for line in email.body:
-            print line.rstrip()  # pickling the data line by line adds extra carriage returns; rstrip() removes these
+            if not error:
+                # process each email with each feature, and add the id of the feature and a description of it to the
+                # feature_dictionary
+                feature_dictionary[0] = "Character Count"
+                email.add_feature(0, character_count(email.body))
+
+                feature_dictionary[1] = "Word Count"
+                email.add_feature(1, word_count(email.body))
+
+                # new features go here!
+
+                # write feature set for this sample to file
+                ff.write(classifier)
+                for f in email.feature_set.items():
+                    ff.write(" %s:%s" % f)
+
+                ff.write(" # email id: " + email.id)  # add comment to libsvm file
+                ff.write("\n")  # new line for next sample
 
 
 if __name__ == '__main__':

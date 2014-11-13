@@ -69,7 +69,8 @@ class Corpus():
         for row in cur:
             e = Email(self)
             e.assign_values(row['Email_ID'], row['Email_Sender'], row['Email_Recipient'], row['Email_Subject'],
-                            row['Email_Date'], row['Email_Body'], row['Email_Origin_Folder'], row['Email_Mailbox'])
+                            row['Email_Date'], row['Email_Body'], row['Email_Origin_Folder'], row['Email_Mailbox'],
+                            row['Email_Classification'])
             yield e
 
         conn.close()
@@ -92,7 +93,14 @@ class Email():
         self.subject = ""
         self.body = ""
 
-    def assign_values(self, pk, sender, recipient, subject, date, body, origin_folder, mailbox):
+        self.CLASSIFICATION_TYPES = {
+            'Unclassified': 'U',
+            'Formal': 'F',
+            'Informal': 'I'}
+        self.classification = self.CLASSIFICATION_TYPES['Unclassified']
+        self.feature_set = {}
+
+    def assign_values(self, pk, sender, recipient, subject, date, body, origin_folder, mailbox, classification):
         self.id = pk
         self.sender = sender
         self.recipient = recipient
@@ -101,6 +109,10 @@ class Email():
         self.body = pickle.loads(body)
         self.origin_folder = origin_folder
         self.mailbox = mailbox
+        self.classification = classification
+
+    def add_feature(self, feature_id, value):
+        self.feature_set[feature_id] = value
 
     def create_db_table(self):
         print 'Creating database...'
@@ -115,8 +127,9 @@ class Email():
                           Email_Date varchar null,
                           Email_Body blob null,
                           Email_Origin_Folder varchar null,
-                          Email_Mailbox varchar null
-                    );""")
+                          Email_Mailbox varchar null,
+                          Email_Classification int null
+                    );""")  # Email_Classification = 0 if deemed informal and 1 if formal
         print '\tEMAIL table created successfully.'
 
         conn.close()
@@ -159,6 +172,14 @@ class Email():
             f.close()
 
             self.save_email()
+
+    def get_current_message(self):
+        most_recent_body = []
+        for line in self.body:
+            if "-----Original Message-----" in line:
+                self.body = most_recent_body
+            else:
+                most_recent_body.append(line)
 
     def is_missing_values(self):
         if not self.mailbox or not self.origin_folder:
