@@ -1,7 +1,7 @@
 email-formality-detection
 =========================
 
-Detect whether an email is formally or informally written. `data/prep_corpus.py` writes the emails to a SQLite
+Predict whether an email is formally or informally written. `data/prep_corpus.py` writes the emails to a SQLite
 database. `process_corpus.py` creates a text file with extracted features in LibSVM format (for supervised machine
 learning). `data/classifier_app` is a web application for simplifying manual classification of each email as being
 either formal or informal.
