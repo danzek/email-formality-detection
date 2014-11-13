@@ -71,7 +71,7 @@ class Corpus():
             e.assign_values(row['Email_ID'], row['Email_Sender'], row['Email_Recipient'], row['Email_Subject'],
                             row['Email_Date'], row['Email_Body'], row['Email_Origin_Folder'], row['Email_Mailbox'],
                             row['Email_Classification'])
-            yield e
+            yield e  # generator method
 
         conn.close()
 
@@ -133,6 +133,15 @@ class Email():
         print '\tEMAIL table created successfully.'
 
         conn.close()
+
+    def enumerate_lines(self):
+        for line in self.body:
+            yield line.rstrip()  # generator method
+
+    def enumerate_words(self):
+        for line in self.enumerate_lines():
+            for word in line:
+                yield word  # generator method
 
     def extract_fields(self, email_file, mailbox):
         valid_email = True

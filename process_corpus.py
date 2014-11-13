@@ -25,7 +25,7 @@ __status__ = "Development"
 
 
 from data.models import Corpus
-from features.simple_counts import character_count, word_count
+from features.simple_counts import average_syllables_per_word, character_count, syllable_count, word_count
 
 
 def main():
@@ -36,6 +36,7 @@ def main():
     with open('features.libsvm', 'w') as ff:
         for email in c.fetch_all_emails():
             error = False
+            email.get_current_message()  # make sure only dealing with most recent message
 
             # add classification as formal = 1 and informal = 0 for libsvm file (requires all numeric values)
             if email.classification == 'F':
@@ -50,19 +51,25 @@ def main():
                 # process each email with each feature, and add the id of the feature and a description of it to the
                 # feature_dictionary
                 feature_dictionary[0] = "Character Count"
-                email.add_feature(0, character_count(email.body))
+                email.add_feature(0, character_count(email))
 
-                feature_dictionary[1] = "Word Count"
-                email.add_feature(1, word_count(email.body))
+                feature_dictionary[1] = "Syllable Count"
+                email.add_feature(1, syllable_count(email))
 
-                # new features go here!
+                feature_dictionary[2] = "Average # Syllables per Word"
+                email.add_feature(2, average_syllables_per_word(email))
+
+                feature_dictionary[3] = "Word Count"
+                email.add_feature(3, word_count(email))
+
+                # new features go here
 
                 # write feature set for this sample to file
                 ff.write(classifier)
                 for f in email.feature_set.items():
                     ff.write(" %s:%s" % f)
 
-                ff.write(" # email id: " + email.id)  # add comment to libsvm file
+                ff.write(" # email id: " + email.id)  # add comment to libsvm file with unique id for sample
                 ff.write("\n")  # new line for next sample
 
 
