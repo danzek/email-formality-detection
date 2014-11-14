@@ -18,3 +18,5 @@
 .idea/workspace.xml
 
 enron.db
+
+*.db-journal

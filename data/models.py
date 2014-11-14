@@ -38,24 +38,17 @@ class Corpus():
         self.database_filename = "enron.db"
 
     def build_sqlite_corpus(self, path_to_corpus):
-        for person in os.listdir(path_to_corpus):
-            print 'Processing email for ' + person
-            inbox = os.path.join(path_to_corpus, person, 'inbox').decode('utf-8')
-            sent = os.path.join(path_to_corpus, person, 'sent').decode('utf-8')
-
+        exclusion_set = set(['contacts', 'calendar'])  # excluded folder names
+        for root, subdirs, emails in os.walk(path_to_corpus, topdown=True):
+            print 'Parsing ' + root + ' folder.'
             try:
-                for email in os.listdir(inbox):
-                    e = Email()
-                    e.extract_fields(os.path.join(inbox, email), 'Inbox')
+                for email in emails:
+                    e = Email(self)
+                    e.extract_fields(os.path.join(root, email), root.rsplit('/', 1)[1])  # get only parent directory
             except OSError:
-                print '\tNo inbox folder in ' + person + ' directory.'
+                print '\tOSError while processing ' + root + ' directory.'
 
-            try:
-                for email in os.listdir(sent):
-                    e = Email()
-                    e.extract_fields(os.path.join(sent, email), 'Sent')
-            except OSError:
-                print '\tNo sent folder in ' + person + ' directory.'
+            subdirs[:] = [d for d in subdirs if d not in exclusion_set]
 
         print 'Finished creating SQLite corpus.'
 
@@ -196,7 +189,7 @@ class Email():
     def get_current_message(self):
         most_recent_body = []
         for line in self.body:
-            if "-----Original Message-----" in line:
+            if "-----Original Message-----" in line or "---------------------- Forwarded" in line:
                 self.body = most_recent_body
             else:
                 most_recent_body.append(line)
@@ -218,7 +211,7 @@ class Email():
             cur = conn.execute(
                 """
                 insert into EMAIL (Email_Sender, Email_Recipient, Email_Subject, Email_Date, Email_Body,
-                Email_Origin_Folder, Email_Mailbox, Email Classification) values (?, ?, ?, ?, ?, ?, ?, ?);
+                Email_Origin_Folder, Email_Mailbox, Email_Classification) values (?, ?, ?, ?, ?, ?, ?, ?);
                 """, (self.sender, self.recipient, self.subject, self.date, sqlite3.Binary(self.body),
                 self.origin_folder, self.mailbox, self.classification))
             conn.commit()
