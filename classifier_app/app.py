@@ -26,7 +26,9 @@ __status__ = "Development"
 
 import flask
 from auth import authenticate_user, SECRET_KEY  # this file is not included on github for (hopefully) obvious reasons
-# from ..models import Corpus  # ValueError: Attempted relative import in non-package
+import sys
+sys.path.append("..")  # the next import won't work without this
+from data.models import Corpus
 
 
 app = flask.Flask(__name__)
@@ -62,6 +64,10 @@ def menu():
         return flask.render_template('menu.html', username=flask.session['username'])
     else:
         return flask.redirect(flask.url_for('login'))
+
+@app.route('/classify/')
+def classify():
+    return flask.render_template('emailview.html')  # emailview is master, actually redirect to specific random email
 
 
 if __name__ == '__main__':
