@@ -114,6 +114,17 @@ class Email():
     def add_feature(self, feature_id, value):
         self.feature_set[feature_id] = value
 
+    def classify(self, classification):
+        self.classification = self.CLASSIFICATION_TYPES[classification]
+        conn = sqlite3.connect(self.c.database_filename)
+        conn.text_factory = str
+        cur = conn.execute(
+            """
+            update EMAIL set Email Classification = ? where Email_ID = ?;
+            """, (self.classification, self.id))
+        conn.commit()
+        conn.close()
+
     def create_db_table(self):
         print 'Creating database...'
         conn = sqlite3.connect(self.c.database_filename)
@@ -207,8 +218,8 @@ class Email():
             cur = conn.execute(
                 """
                 insert into EMAIL (Email_Sender, Email_Recipient, Email_Subject, Email_Date, Email_Body,
-                Email_Origin_Folder, Email_Mailbox) values (?, ?, ?, ?, ?, ?, ?);
+                Email_Origin_Folder, Email_Mailbox, Email Classification) values (?, ?, ?, ?, ?, ?, ?, ?);
                 """, (self.sender, self.recipient, self.subject, self.date, sqlite3.Binary(self.body),
-                self.origin_folder, self.mailbox))
+                self.origin_folder, self.mailbox, self.classification))
             conn.commit()
             conn.close()
