@@ -1,0 +1,19 @@
+{% extends "master.html" %}
+
+{% block title %}Login{% endblock %}
+
+{% block page_title %}Login{% endblock %}
+
+{% block body %}
+    <font color="red"><strong>{{ message }}</strong></font>
+
+    <form method="POST" action="{{ url_for('login') }}">
+        Username: <input type="text" name="username" size="15" /><br />
+        Password: <input type="password" name="password" size="15" /><br />
+        <p><input type="submit" value="Login" /></p>
+    </form>
+{% endblock %}
+
+{% block right_column %}
+    <p><strong><a href="{{ url_for('index') }}">[Return Home]</a></strong></p>
+{% endblock %}

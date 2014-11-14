@@ -35,7 +35,7 @@ class Corpus():
     """
 
     def __init__(self):
-        self.database_filename = "enron.db"
+        self.database_filename = os.path.join(os.path.dirname(__file__), 'enron.db')  # hardcode relative path to data
 
     def build_sqlite_corpus(self, path_to_corpus):
         exclusion_set = set(['contacts', 'calendar'])  # excluded folder names
@@ -44,7 +44,7 @@ class Corpus():
             try:
                 for email in emails:
                     e = Email(self)
-                    e.extract_fields(os.path.join(root, email), root.rsplit('/', 1)[1])  # get only parent directory
+                    e.extract_fields(os.path.join(root, email), root.rsplit('/', 1)[1])  # get parent directory
             except OSError:
                 print '\tOSError while processing ' + root + ' directory.'
 

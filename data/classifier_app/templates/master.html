@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title>{% block title %}{% endblock %} :: CNIT499NLT Email Formality Classification</title>
+    <style type="text/css">
+        body {
+            margin:0px 0px 0px 0px;
+            font-family: Arial,Helvetica Neue,Helvetica,sans-serif;
+        }
+
+        #leftcontent {
+            float:left;
+            width:67%;
+            background:#fff;
+            border-right:2px solid #000;
+            border-bottom:2px solid #000;
+            margin-right:15px;
+            padding-bottom:20px;
+        }
+
+        #rightcontent {
+        }
+
+        p,h1,pre {
+            margin:0px 30px 10px 30px;
+        }
+
+        h1 {
+            font-size:20px;
+            padding-top:10px;
+        }
+
+        #rightcontent p {
+            font-size:14px;
+            margin-left:0px;
+        }
+</style>
+</head>
+<body>
+    <div id="leftcontent">
+        <h1>CNIT499NLT Email Formality Classification</h1>
+        <h2>{% block page_title %}{% endblock %}</h2>
+        {% block body %}{% endblock %}
+    </div>
+    <div id="rightcontent">
+        {% block right_column %}{% endblock %}
+    </div>
+</body>
+</html>

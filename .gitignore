@@ -20,3 +20,5 @@
 enron.db
 
 *.db-journal
+
+data/classifier_app/auth.py

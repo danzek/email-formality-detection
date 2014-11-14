@@ -1,0 +1,13 @@
+{% extends "master.html" %}
+
+{% block title %}Home{% endblock %}
+
+{% block page_title %}Welcome{% endblock %}
+
+{% block body %}
+    <p>Web application for classifying random sample of emails as formal or informal.</p>
+{% endblock %}
+
+{% block right_column %}
+    <p><strong><a href="{{ url_for('login') }}">[LOGIN]</a></strong></p>
+{% endblock %}

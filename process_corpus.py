@@ -50,6 +50,8 @@ def main():
             if not error:
                 # process each email with each feature, and add the id of the feature and a description of it to the
                 # feature_dictionary
+                print 'Processing email #' + str(email.id)
+
                 feature_dictionary[0] = "Character Count"
                 email.add_feature(0, character_count(email))
 
@@ -69,7 +71,7 @@ def main():
                 for f in email.feature_set.items():
                     ff.write(" %s:%s" % f)
 
-                ff.write(" # email id: " + email.id)  # add comment to libsvm file with unique id for sample
+                ff.write(" # email id: " + str(email.id))  # add comment to libsvm file with unique id for sample
                 ff.write("\n")  # new line for next sample
 
 
