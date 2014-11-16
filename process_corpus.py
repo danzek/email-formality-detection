@@ -44,7 +44,7 @@ def main():
             elif email.classification == 'I':
                 classifier = "0"
             else:
-                print 'Error: Unclassified Email, Invalid Sample'
+                print 'Error: Unclassified Email, Invalid Sample for Training Set'
                 error = True
 
             if not error:

@@ -27,17 +27,19 @@ __status__ = "Development"
 import os
 import sqlite3
 import pickle
+import random
 
 
 class Corpus():
-    """
-    Corpus object.
-    """
+    """Corpus object."""
 
     def __init__(self):
+        """Initial parameter is relative path to the database, assumed to be in the same folder as this file."""
         self.database_filename = os.path.join(os.path.dirname(__file__), 'enron.db')  # hardcode relative path to data
 
     def build_sqlite_corpus(self, path_to_corpus):
+        """Given the path to the unpacked corpus as available from https://www.cs.cmu.edu/~./enron/, parse data
+        into SQLite."""
         exclusion_set = set(['contacts', 'calendar'])  # excluded folder names
         for root, subdirs, emails in os.walk(path_to_corpus, topdown=True):
             print 'Parsing ' + root + ' folder.'
@@ -52,12 +54,74 @@ class Corpus():
 
         print 'Finished creating SQLite corpus.'
 
-    def fetch_all_emails(self):
+    def count_all_emails(self, classification=None):
+        """Count all emails in SQLite database, optionally count by classification type
+
+        Optional arguments:
+            classification -- classification type to count. Defaults to none (i.e. count all emails).
+                              Options: ['unclassified', 'formal', 'informal', 'classified']
+                              ('classified' means that email has been classified as either formal or informal)
+        """
         conn = sqlite3.connect(self.database_filename)
         conn.text_factory = str
         conn.row_factory = sqlite3.Row
-        cur = conn.cursor()
-        cur = conn.execute("select * from EMAIL;")
+
+        if not classification:
+            sql = "select max(Email_ID) from EMAIL;"
+        else:
+            sql = "select count(Email_ID) from EMAIL "
+            sql += self.get_classification_sql_where_clause(classification)
+
+        cur = conn.execute(sql)
+        count = cur.fetchone()[0]
+
+        conn.close()
+        return count
+
+    def fetch_all_emails(self, column=None, query=None, exact_match=False):
+        """Generator (coroutine) function to fetch all emails; returns one email object at a time. To use, do as
+        follows (where c is the instantiated corpus object):
+
+        for email in c.fetch_all_emails():
+            print email.sender  # do something with email object
+
+        Optional arguments:
+            column -- specify a column by which to filter. Options are:
+                      ['id', 'mailbox', 'origin_folder', 'sender', 'recipient', 'date', 'subject', 'classification']
+            query -- value by which to filter specified column
+            exact_match -- boolean, defaults to False. True will require an exact match (SQL '=' operator), and
+                           False will perform a search using the specified query (SQL 'LIKE' operator).
+        """
+        conn = sqlite3.connect(self.database_filename)
+        conn.text_factory = str
+        conn.row_factory = sqlite3.Row
+
+        DATABASE_COLUMNS = {
+            'id': 'Email_ID',
+            'mailbox': 'Email_Mailbox',
+            'origin_folder': 'Email_Origin_Folder',
+            'sender': 'Email_Sender',
+            'recipient': 'Email_Recipient',
+            'date': 'Email_Date',
+            'subject': 'Email_Subject'
+        }
+
+        # matching exact_match to SQL operators
+        operator = 'like'  # since exact_match is False by default
+        if exact_match:
+            operator = '='
+
+        # constructing sql query
+        # I verified that SQLite requires no special handling for id, this still works even when treated as a string
+        sql = "select * from EMAIL "
+        if column and query and column != 'classification':
+            sql += "where " + DATABASE_COLUMNS[column] + " " + operator + " '" + query + "';"
+        elif column and query and column == 'classification':
+            sql += self.get_classification_sql_where_clause(query)
+        else:
+            sql += ";"
+
+        cur = conn.execute(sql)
 
         for row in cur:
             e = Email(self)
@@ -68,13 +132,51 @@ class Corpus():
 
         conn.close()
 
+    def fetch_random_samples(self, quantity):
+        """Generator (coroutine) function to fetch a random sample of unclassified emails; returns one email object at
+        a time. To use, do as follows (where c is the instantiated corpus object):
+
+        for email in c.fetch_random_sample():
+            print email.sender  # do something with email object
+
+        Arguments:
+            quantity -- number of random emails to return
+        """
+        num_unclassified_emails = self.count_all_emails(classification='unclassified')
+
+        # verify there are enough unclassified emails remaining for request; if not, set quantity to the number of
+        # remaining unclassified emails
+        if quantity > num_unclassified_emails:
+            quantity = num_unclassified_emails
+
+        for i in range(quantity):
+            pass  # TODO -- handle random number generation and fetch emails, reuse existing code
+
+    def get_classification_sql_where_clause(self, classification):
+        """Given classification, returns WHERE clause for SQL statement to get results by classification type.
+
+        Arguments:
+            classification -- classification type to count.
+                              Options: ['unclassified', 'formal', 'informal', 'classified']
+                              ('classified' means that email has been classified as either formal or informal)
+        """
+        sql = "where Email_Classification "
+        if classification.lower() == 'u' or classification.lower() == 'unclassified':
+            sql += "= 'U';"
+        elif classification.lower() == 'f' or classification.lower() == 'formal':
+            sql += "= 'F';"
+        elif classification.lower() == 'i' or classification.lower() == 'informal':
+            sql += "= 'I';"
+        elif classification.lower() == 'c' or classification.lower() == 'classified':
+            sql += "= 'I' or Email_Classification = 'F';"  # could use "<> 'U'" but this is a whitelist approach
+        else:
+            raise ValueError('%s is an invalid classification option.' % classification)
+
+        return sql
 
 
 class Email():
-    """
-    Email object.
-    """
-
+    """Email object."""
     def __init__(self, corpus):
         self.c = corpus
         self.id = 0
