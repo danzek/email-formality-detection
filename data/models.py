@@ -32,7 +32,6 @@ import random
 
 class Corpus():
     """Corpus object."""
-
     def __init__(self):
         """Initial parameter is relative path to the database, assumed to be in the same folder as this file."""
         self.database_filename = os.path.join(os.path.dirname(__file__), 'enron.db')  # hardcode relative path to data
@@ -70,7 +69,7 @@ class Corpus():
             sql = "select max(Email_ID) from EMAIL;"
         else:
             sql = "select count(Email_ID) from EMAIL "
-            sql += self.get_classification_sql_where_clause(classification)
+            sql += self.__get_classification_sql_where_clause(classification)
 
         cur = conn.execute(sql)
         count = cur.fetchone()[0]
@@ -79,11 +78,15 @@ class Corpus():
         return count
 
     def fetch_all_emails(self, column=None, query=None, exact_match=False):
-        """Generator (coroutine) function to fetch all emails; returns one email object at a time. To use, do as
-        follows (where c is the instantiated corpus object):
+        """Generator (coroutine) method to fetch all emails; returns one email object at a time. To use, do as
+        follows (where c is the instantiated Corpus object):
 
-        for email in c.fetch_all_emails():
-            print email.sender  # do something with email object
+            for email in c.fetch_all_emails():
+                print email.sender  # do something with email object
+
+            # retrieves all emails with 'fraud' in the subject line
+            for email in c.fetch_all_emails(column='subject', query='fraud', exact_match=False)
+                print email.sender  # do something with email object
 
         Optional arguments:
             column -- specify a column by which to filter. Options are:
@@ -117,7 +120,7 @@ class Corpus():
         if column and query and column != 'classification':
             sql += "where " + DATABASE_COLUMNS[column] + " " + operator + " '" + query + "';"
         elif column and query and column == 'classification':
-            sql += self.get_classification_sql_where_clause(query)
+            sql += self.__get_classification_sql_where_clause(query)
         else:
             sql += ";"
 
@@ -132,28 +135,54 @@ class Corpus():
 
         conn.close()
 
-    def fetch_random_samples(self, quantity):
-        """Generator (coroutine) function to fetch a random sample of unclassified emails; returns one email object at
-        a time. To use, do as follows (where c is the instantiated corpus object):
+    def fetch_random_sample(self, classification=None):
+        """Fetches a random email sample: returns one email object; optionally filter by classification type. To use,
+        do as follows (where c is the instantiated Corpus object):
 
-        for email in c.fetch_random_sample():
-            print email.sender  # do something with email object
+            email = c.fetch_random_sample():
+            print email.recipient  # do something with email object
+
+        This should be improved in a production model to improve performance. This begins by loading all the id's of
+        that class into a list then selects a random number between 0 and the length of the list, but this means
+        potentially populating a list with up to 500,000 integers every time a random sample is requested, which is not
+        optimal. I recommend populating a list of each classification type when the Corpus object is instantiated, that
+        way it is available whenever called. The trick is to remember popping those items off the list whenever another
+        method affects them (even in another model such as the classify() method of the Email class).
 
         Arguments:
-            quantity -- number of random emails to return
+            classification -- classification type to count. Defaults to none (i.e. return any email).
+                              Options: ['unclassified', 'formal', 'informal', 'classified']
+                              ('classified' means that email has been classified as either formal or informal)
         """
-        num_unclassified_emails = self.count_all_emails(classification='unclassified')
+        list_of_ids = []
 
-        # verify there are enough unclassified emails remaining for request; if not, set quantity to the number of
-        # remaining unclassified emails
-        if quantity > num_unclassified_emails:
-            quantity = num_unclassified_emails
+        if classification:
+            if classification.lower() == 'u' or classification.lower() == 'unclassified':
+                for email in self.fetch_all_emails(column='classification', query='u'):
+                    list_of_ids.append(email.id)
+            elif classification.lower() == 'f' or classification.lower() == 'formal':
+                for email in self.fetch_all_emails(column='classification', query='f'):
+                    list_of_ids.append(email.id)
+            elif classification.lower() == 'i' or classification.lower() == 'informal':
+                for email in self.fetch_all_emails(column='classification', query='i'):
+                    list_of_ids.append(email.id)
+            elif classification.lower() == 'c' or classification.lower() == 'classified':
+                for email in self.fetch_all_emails(column='classification', query='c'):
+                    list_of_ids.append(email.id)
+        else:
+            for email in self.fetch_all_emails():
+                list_of_ids.append(email.id)
 
-        for i in range(quantity):
-            pass  # TODO -- handle random number generation and fetch emails, reuse existing code
+        if list_of_ids:
+            random_list_index = random.randrange(0, len(list_of_ids))
+            return self.fetch_all_emails(column='id', query=str(list_of_ids[random_list_index]), exact_match=True)
+        else:
+            print 'There are no samples that meet the specified criteria.'
+            return None
 
-    def get_classification_sql_where_clause(self, classification):
+    def __get_classification_sql_where_clause(self, classification):
         """Given classification, returns WHERE clause for SQL statement to get results by classification type.
+        (for internal class use only, i.e. private method)
 
         Arguments:
             classification -- classification type to count.
@@ -178,6 +207,27 @@ class Corpus():
 class Email():
     """Email object."""
     def __init__(self, corpus):
+        """Initial parameters are set to empty strings. Corpus object is required as parameter to instantiate email.
+
+        Required arguments:
+            c -- Corpus object to which email belongs.
+
+        Optional arguments:
+            id -- primary key integer ID of email in SQLite database
+            mailbox -- name of direct parent folder in which email was extracted
+            origin_folder -- upper level folder from which email was extracted (generally an Enron username)
+            sender -- email sender
+            recipient -- email recipient
+            date -- date string from email header (as is, not parsed as python date object)
+            subject -- email subject
+            body -- email body stored in binary format (BLOB). Data is picked then written as binary. Use the provided
+                    methods for retrieving email body to ensure data is unpickled and handled properly
+                    (enumerate_lines() and enumerate_words())
+            CLASSIFICATION_TYPES -- for internal use only, convert plaintext classification to database character
+            classification - single-character classification ['U', 'F', 'I']
+            feature_set - feature vector (dictionary) storing extracted features from this object (populated with
+                          add_feature())
+        """
         self.c = corpus
         self.id = 0
         self.mailbox = ""
@@ -196,6 +246,8 @@ class Email():
         self.feature_set = {}
 
     def assign_values(self, pk, sender, recipient, subject, date, body, origin_folder, mailbox, classification):
+        """Takes parameters that are optional when object is instantiated and assigns them to the object (see docstring
+        for __init__.py for an explanation of each argument)."""
         self.id = pk
         self.sender = sender
         self.recipient = recipient
@@ -207,9 +259,20 @@ class Email():
         self.classification = classification
 
     def add_feature(self, feature_id, value):
+        """Adds a single new feature to the feature_set dictionary.
+
+        Arguments:
+            feature_id -- integer key to reference to the feature
+            value -- extracted/calculated value of the feature
+        """
         self.feature_set[feature_id] = value
 
     def classify(self, classification):
+        """Classify an email.
+
+        Arguments:
+            classification -- specify object classification ['Unclassified', 'Formal', 'Informal']
+        """
         self.classification = self.CLASSIFICATION_TYPES[classification]
         conn = sqlite3.connect(self.c.database_filename)
         conn.text_factory = str
@@ -221,8 +284,9 @@ class Email():
         conn.close()
 
     def create_db_table(self):
+        """Create sqlite database table for emails (also creates database if needed)."""
         print 'Creating database...'
-        conn = sqlite3.connect(self.c.database_filename)
+        conn = sqlite3.connect(self.c.database_filename)  # uses db file path from Corpus object
         cur = conn.cursor()
 
         cur.execute(""" create table EMAIL (
@@ -241,15 +305,31 @@ class Email():
         conn.close()
 
     def enumerate_lines(self):
+        """Generator (coroutine) numerates lines in email body. Use like so:
+
+        for line in email.enumerate_lines():
+            print line  # do something with line
+        """
         for line in self.body:
             yield line.rstrip()  # generator method
 
     def enumerate_words(self):
+        """Generator (coroutine) numerates words in email body. Use like so:
+
+        for word in email.enumerate_words():
+            print word  # do something with word
+        """
         for line in self.enumerate_lines():
             for word in line:
                 yield word  # generator method
 
     def extract_fields(self, email_file, mailbox):
+        """Extracts fields from email file and saves them to database.
+
+        Arguments:
+            email_file -- file path to email from which data will be extracted
+            mailbox -- name of direct parent folder in which email was extracted
+        """
         valid_email = True
 
         # check if database already exists; if not, create it
@@ -289,6 +369,10 @@ class Email():
             self.save_email()
 
     def get_current_message(self):
+        """Reduce email body to most recent message only.
+
+        Needs more work/improvement.
+        """
         most_recent_body = []
         for line in self.body:
             if "-----Original Message-----" in line or "---------------------- Forwarded" in line:
@@ -296,7 +380,8 @@ class Email():
             else:
                 most_recent_body.append(line)
 
-    def is_missing_values(self):
+    def __is_missing_values(self):
+        """Checks if email is missing important values. Private method."""
         if not self.mailbox or not self.origin_folder:
             return True
         elif not self.sender or not self.recipient:
@@ -307,7 +392,8 @@ class Email():
             return False
 
     def save_email(self):
-        if not self.is_missing_values():
+        """Saves email to database."""
+        if not self.__is_missing_values():
             conn = sqlite3.connect(self.c.database_filename)
             conn.text_factory = str
             cur = conn.execute(
