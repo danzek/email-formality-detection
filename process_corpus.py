@@ -30,7 +30,7 @@ from features.simple_counts import average_syllables_per_word, character_count, 
 
 def main():
     c = Corpus()
-    feature_dictionary = {}
+    feature_dictionary = {}  # stores human-readable names for each feature
     classifier = ""
 
     with open('features.libsvm', 'w') as ff:
@@ -38,6 +38,7 @@ def main():
             error = False
             email.get_current_message()  # make sure only dealing with most recent message
 
+            # TODO -- currently ignoring unclassified emails (only building training set), needs to be expanded
             # add classification as formal = 1 and informal = 0 for libsvm file (requires all numeric values)
             if email.classification == 'F':
                 classifier = "1"

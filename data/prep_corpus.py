@@ -11,7 +11,7 @@ Penghao Wang
 Purdue University
 CNIT499 Natural Language Technologies
 
-Put Enron emails into SQLite database. Currently this only gets the 'inbox' and 'sent' folders. Should it get more?
+Put Enron emails into SQLite database.
 """
 
 __author__ = "Dan O'Day"

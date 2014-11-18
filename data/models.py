@@ -38,7 +38,11 @@ class Corpus():
 
     def build_sqlite_corpus(self, path_to_corpus):
         """Given the path to the unpacked corpus as available from https://www.cs.cmu.edu/~./enron/, parse data
-        into SQLite."""
+        into SQLite.
+
+        Arguments:
+            path_to_corpus -- full path to unpacked Enron email corpus
+        """
         exclusion_set = set(['contacts', 'calendar'])  # excluded folder names
         for root, subdirs, emails in os.walk(path_to_corpus, topdown=True):
             print 'Parsing ' + root + ' folder.'

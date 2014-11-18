@@ -2,18 +2,26 @@
 
 {% block title %}Home{% endblock %}
 
+{% block navigation %}
+    <li class="active"><a href="#">Home</a></li>
+    <li><a href="{{ url_for('classify') }}">Email Classifier</a></li>
+    <li><a href="#">Validator</a></li>
+    <li><a href="{{ url_for('logout') }}">Logout</a></li>
+{% endblock %}
+
 {% block page_title %}Main Menu{% endblock %}
 
 {% block body %}
     <p>Welcome, {{ username }}!</p>
-    <ul>
-        <li><a href="{{ url_for('classify') }}"><strong>Email Classifier:</strong></a> Classify random sample of emails
-            as formal or informal.</li>
-        <li><a href="#"><strong>Current Message Extraction Validator:</strong></a> Validate framework's ability to
-            determine most recent message from random sample of emails.</li>
-    </ul>
-{% endblock %}
-
-{% block right_column %}
-    <p><strong><a href="{{ url_for('logout') }}">[LOG OUT]</a></strong></p>
+    <table border="1" cellpadding="5" cellspacing="5">
+        <tr>
+            <td><a href="{{ url_for('classify') }}"><strong>Email Classifier</strong></a></td>
+            <td>Classify random sample of emails as formal or informal.</td>
+        </tr>
+        <tr>
+            <td><a href="#"><strong>Current Message Extraction Validator</strong></a></td>
+            <td>(NOT IMPLEMENTED YET) Validate framework's ability to determine most recent message from random
+                sample of emails.</td>
+        </tr>
+    </table>
 {% endblock %}

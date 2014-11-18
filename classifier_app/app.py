@@ -44,14 +44,14 @@ def login():
         username = flask.request.form['username']
         password = flask.request.form['password']
         if not username or not password:
-            return flask.render_template('login.html', message="You must enter a username and password.")
+            return flask.render_template('login.html', message='Missing required field')
         elif authenticate_user(username, password):
             flask.session['username'] = flask.request.form['username']
             return flask.render_template('menu.html', username=username)
         else:
-            return flask.render_template('login.html', message="Invalid username or password")
+            return flask.render_template('login.html', message='Invalid credentials')
     else:
-        return flask.render_template('login.html', message="Please log in.")
+        return flask.render_template('login.html', message="Please log in")
 
 @app.route('/logout/')
 def logout():

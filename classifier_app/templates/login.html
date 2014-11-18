@@ -2,18 +2,25 @@
 
 {% block title %}Login{% endblock %}
 
+{% block extra_css %}
+    <link href="{{ url_for('static', filename='css/signin.css') }}" rel="stylesheet">
+{% endblock %}
+
+{% block navigation %}
+    <li><a href="{{ url_for('index') }}">Home</a></li>
+    <li class="active"><a href="#">Login</a></li>
+{% endblock %}
+
 {% block page_title %}Login{% endblock %}
 
 {% block body %}
-    <font color="red"><strong>{{ message }}</strong></font>
 
-    <form method="POST" action="{{ url_for('login') }}">
-        Username: <input type="text" name="username" size="15" /><br />
-        Password: <input type="password" name="password" size="15" /><br />
-        <p><input type="submit" value="Login" /></p>
+    <form class="form-signin" role="form" method="POST" action="{{ url_for('login') }}">
+        <h2 class="form-signin-heading">{{ message }}</h2>
+        <label for="username" class="sr-only">Email address</label>
+        <input type="text" id="username" name="username" class="form-control" placeholder="Username" required autofocus>
+        <label for="password" class="sr-only">Password</label>
+        <input type="password" id="password" name="password" class="form-control" placeholder="Password" required>
+        <button class="btn btn-lg btn-primary btn-block" type="submit">Login</button>
     </form>
-{% endblock %}
-
-{% block right_column %}
-    <p><strong><a href="{{ url_for('index') }}">[Return Home]</a></strong></p>
 {% endblock %}

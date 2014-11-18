@@ -2,12 +2,36 @@
 
 {% block title %}Home{% endblock %}
 
-{% block page_title %}Welcome{% endblock %}
-
-{% block body %}
-    <p>Web application for classifying random sample of emails as formal or informal.</p>
+{% block navigation %}
+    <li class="active"><a href="#">Home</a></li>
+    <li><a href="{{ url_for('login') }}">Login</a></li>
 {% endblock %}
 
-{% block right_column %}
-    <p><strong><a href="{{ url_for('login') }}">[LOGIN]</a></strong></p>
+{% block page_title %}{% endblock %}
+
+{% block body %}
+    <div class="starter-template">
+        <h1>CNIT 499NLT Web App</h1>
+        <p class="lead">Web application for email classification and framework verification.</p>
+        <p>
+            This is a group project for CNIT499NLT Natural Language Technologies at Purdue University. The course
+            instructor is Dr. Julia Taylor.
+        </p>
+        <p>
+            This project uses the Enron email corpus, retrieved from
+            <a href="https://www.cs.cmu.edu/~./enron/">https://www.cs.cmu.edu/~./enron/</a>.
+        </p>
+        <p>
+            The complete project and corresponding code are
+            <a href="https://github.com/danzek/email-formality-detection">available on Github</a>.
+        </p>
+        <h2>Group Members</h2>
+        <p>
+            Dan O'Day<br />
+            Robert Hinh<br />
+            Upasita Jain<br />
+            Sangmi Shin<br />
+            Penghao Wang
+        </p>
+    </div>
 {% endblock %}
