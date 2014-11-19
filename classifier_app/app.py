@@ -29,10 +29,11 @@ from auth import authenticate_user, SECRET_KEY  # this file is not included on g
 import sys
 sys.path.append("..")  # the next import won't work without this
 from data.models import Corpus
+import cStringIO
 
 
 app = flask.Flask(__name__)
-
+c = Corpus()
 
 @app.route('/')
 def index():
@@ -51,7 +52,7 @@ def login():
         else:
             return flask.render_template('login.html', message='Invalid credentials')
     else:
-        return flask.render_template('login.html', message="Please log in")
+        return flask.render_template('login.html')
 
 @app.route('/logout/')
 def logout():
@@ -67,8 +68,26 @@ def menu():
 
 @app.route('/classify/')
 def classify():
-    return flask.render_template('emailview.html')  # emailview is master, actually redirect to specific random email
+    e = c.fetch_random_sample(classification='unclassified')
+    return flask.render_template('emailview.html',
+                                 email_id=e.id,
+                                 email_sender=e.sender,
+                                 email_recipient=e.recipient,
+                                 email_date=e.date,
+                                 email_subject=e.subject,
+                                 email_body=render_email_body(e.id))
 
+@app.route('/emailbody/<int:email_id>')
+def render_email_body(email_id):
+    eg = c.fetch_all_emails(column='id', query=email_id, exact_match=True)  # eg = email generator method
+    e = next(eg, None)
+    if e:
+        f = cStringIO.StringIO()
+        for line in e.enumerate_lines():
+            f.write(line + '&nbsp;<br />')  # have to add html newline or else it renders as a clump
+        return f.getvalue()
+    else:
+        flask.abort(404)
 
 if __name__ == '__main__':
     app.debug = True

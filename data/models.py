@@ -85,6 +85,7 @@ class Corpus():
         """Generator (coroutine) method to fetch all emails; returns one email object at a time. To use, do as
         follows (where c is the instantiated Corpus object):
 
+            # get all emails
             for email in c.fetch_all_emails():
                 print email.sender  # do something with email object
 
@@ -92,12 +93,18 @@ class Corpus():
             for email in c.fetch_all_emails(column='subject', query='fraud', exact_match=False)
                 print email.sender  # do something with email object
 
+            # get emails in range
+            for email in c.fetch_all_emails(start_id=1, end_id=500)
+                print email.id  # do something with email object
+
         Optional arguments:
             column -- specify a column by which to filter. Options are:
                       ['id', 'mailbox', 'origin_folder', 'sender', 'recipient', 'date', 'subject', 'classification']
             query -- value by which to filter specified column
             exact_match -- boolean, defaults to False. True will require an exact match (SQL '=' operator), and
                            False will perform a search using the specified query (SQL 'LIKE' operator).
+            start_id -- if selecting a range of emails by id (pk), this is the first id of that range
+            end_id -- if selecting a range of emails by id (pk), this is the last id of that range
         """
         conn = sqlite3.connect(self.database_filename)
         conn.text_factory = str
@@ -122,7 +129,7 @@ class Corpus():
         # I verified that SQLite requires no special handling for id, this still works even when treated as a string
         sql = "select * from EMAIL "
         if column and query and column != 'classification':
-            sql += "where " + DATABASE_COLUMNS[column] + " " + operator + " '" + query + "';"
+            sql += "where " + DATABASE_COLUMNS[column] + " " + operator + " '" + str(query) + "';"
         elif column and query and column == 'classification':
             sql += self.__get_classification_sql_where_clause(query)
         else:
@@ -146,12 +153,7 @@ class Corpus():
             email = c.fetch_random_sample():
             print email.recipient  # do something with email object
 
-        This should be improved in a production model to improve performance. This begins by loading all the id's of
-        that class into a list then selects a random number between 0 and the length of the list, but this means
-        potentially populating a list with up to 500,000 integers every time a random sample is requested, which is not
-        optimal. I recommend populating a list of each classification type when the Corpus object is instantiated, that
-        way it is available whenever called. The trick is to remember popping those items off the list whenever another
-        method affects them (even in another model such as the classify() method of the Email class).
+        This should be improved in a production model to improve performance.
 
         Arguments:
             classification -- classification type to count. Defaults to none (i.e. return any email).
@@ -177,9 +179,11 @@ class Corpus():
             for email in self.fetch_all_emails():
                 list_of_ids.append(email.id)
 
+        # if list has values, choose a random list index and pass the generator function to eg (email generator)
         if list_of_ids:
             random_list_index = random.randrange(0, len(list_of_ids))
-            return self.fetch_all_emails(column='id', query=str(list_of_ids[random_list_index]), exact_match=True)
+            eg = self.fetch_all_emails(column='id', query=str(list_of_ids[random_list_index]), exact_match=True)
+            return next(eg, None)  # should only be one email, return None if StopIteration exception raised
         else:
             print 'There are no samples that meet the specified criteria.'
             return None

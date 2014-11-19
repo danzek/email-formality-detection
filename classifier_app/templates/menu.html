@@ -13,7 +13,7 @@
 
 {% block body %}
     <p>Welcome, {{ username }}!</p>
-    <table border="1" cellpadding="5" cellspacing="5">
+    <table class="table table-bordered">
         <tr>
             <td><a href="{{ url_for('classify') }}"><strong>Email Classifier</strong></a></td>
             <td>Classify random sample of emails as formal or informal.</td>

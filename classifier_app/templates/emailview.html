@@ -1,12 +1,37 @@
-<!DOCTYPE html>
-<html>
-<head lang="en">
-    <meta charset="UTF-8">
-    <title>{% block title %}{% endblock %} :: CNIT499NLT Email Formality Classification</title>
-</head>
-<body>
-    {% block body %}{% endblock %}
-    {% block email_header %}{% endblock %}
-    {% block email_body %}{% endblock %}
-</body>
-</html>
+{% extends "master.html" %}
+
+{% block title %}Email Classifier{% endblock %}
+
+{% block navigation %}
+    <li><a href="{{ url_for('menu') }}">Home</a></li>
+    <li class="active"><a href="{{ url_for('classify') }}">Email Classifier</a></li>
+    <li><a href="#">Validator</a></li>
+    <li><a href="{{ url_for('logout') }}">Logout</a></li>
+{% endblock %}
+
+{% block page_title %}Email Classifier{% endblock %}
+
+{% block body %}
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <div class="row">
+                <div class="col-md-9">
+                    <dl class="dl-horizontal">
+                        <dt>Email ID:</dt><dd>{{ email_id }}</dd>
+                        <dt>From:</dt><dd>{{ email_sender }}</dd>
+                        <dt>To:</dt><dd>{{ email_recipient }}</dd>
+                        <dt>Date:</dt><dd>{{ email_date }}</dd>
+                        <dt>Subject:</dt><dd>{{ email_subject }}</dd>
+                    </dl>
+                </div>
+                <div class="col-md-3">
+                    <button type="button" class="btn btn-primary btn-lg btn-block">Formal</button><br />
+                    <button type="button" class="btn btn-danger btn-lg btn-block">Informal</button>
+                </div>
+            </div>
+        </div>
+        <div class="panel-body">
+            {{ email_body|safe }}
+        </div>
+    </div>
+{% endblock %}

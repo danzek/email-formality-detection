@@ -16,7 +16,8 @@
 {% block body %}
 
     <form class="form-signin" role="form" method="POST" action="{{ url_for('login') }}">
-        <h2 class="form-signin-heading">{{ message }}</h2>
+        <h2 class="form-signin-heading">Please log in</h2>
+        <p style="color: red; font-weight: bold;">{{ message }}</p>
         <label for="username" class="sr-only">Email address</label>
         <input type="text" id="username" name="username" class="form-control" placeholder="Username" required autofocus>
         <label for="password" class="sr-only">Password</label>
