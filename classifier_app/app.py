@@ -68,48 +68,95 @@ def menu():
 
 @app.route('/classify/')
 def classify():
-    e = c.fetch_random_sample(classification='unclassified')
-    if e:
-        return show_email(e.id, classify=True)
+    if 'username' in flask.session:
+        e = c.fetch_random_sample(classification='unclassified')
+        if e:
+            return show_email(e.id, classify=True)
+        else:
+            flask.abort(404)
     else:
-        flask.abort(404)
+        return flask.redirect(flask.url_for('login'))
 
-@app.route('/email/')
+@app.route('/classify-email/<int:email_pk>/<classification>')
+def classify_email(email_pk, classification):
+    if 'username' in flask.session:
+        eg = c.fetch_all_emails(column='id', query=str(email_pk), exact_match=True)
+        e = next(eg, None)
+        if e:
+            e.classify(classification)
+
+        return flask.redirect('classify')
+    else:
+        return flask.redirect(flask.url_for('login'))
+
+@app.route('/email/', methods=['GET', 'POST'])
 def search_emails():
-    return 'test'
+    if 'username' in flask.session:
+        if flask.request.method == 'POST':
+            email_id = flask.request.form['email_id']
+            if not email_id:
+                return flask.render_template('emailsearch.html', message='Specify ID')
+            else:
+                try:
+                    int_id = int(email_id)
+                except ValueError:
+                    return flask.render_template('emailsearch.html', message='Invalid ID')
+
+                return show_email(int_id)
+        else:
+            return flask.render_template('emailsearch.html')
+    else:
+        return flask.redirect(flask.url_for('login'))
 
 @app.route('/email/<int:email_id>')
 def show_email(email_id, classify=False):
-    if classify:
-        form_value = '''<input class="btn btn-primary btn-lg btn-block" type="submit" value="Formal"><br />
-                        <input class="btn btn-danger btn-lg btn-block" type="submit" value="Informal">'''
+    if 'username' in flask.session:
+        if classify:
+            form_value = '<a class="btn btn-primary btn-lg btn-block" href="' + flask.url_for('classify_email',
+                         email_pk=email_id, classification='Formal') + '" role="button">Formal</a><br />' + \
+                         '<a class="btn btn-danger btn-lg btn-block" href="' + flask.url_for('classify_email',
+                         email_pk=email_id, classification='Informal') + '" role="button">Informal</a><br />' + \
+                         '<a class="btn btn-warning btn-lg btn-block" href="' + flask.url_for('classify') + \
+                         '" role="button">Unsure</a><br />'
+        else:
+            form_value = '<a class="btn btn-primary btn-lg btn-block" href="' + flask.url_for('search_emails') + \
+                         '" role="button">New Email ID</a>'
+        eg = c.fetch_all_emails(column='id', query=email_id, exact_match=True)  # eg = email generator method
+        email = next(eg, None)
+        if email:
+            class_types = {
+                'U': 'UNCLASSIFIED',
+                'F': 'FORMAL',
+                'I': 'INFORMAL'
+            }
+            return flask.render_template('emailview.html',
+                                         email_id=email.id,
+                                         email_class=class_types[email.classification],
+                                         email_sender=email.sender,
+                                         email_recipient=email.recipient,
+                                         email_date=email.date,
+                                         email_subject=email.subject,
+                                         email_body=render_email_body(email.id),
+                                         form=form_value)
+        else:
+            flask.abort(404)
     else:
-        form_value = ""
-    eg = c.fetch_all_emails(column='id', query=email_id, exact_match=True)  # eg = email generator method
-    email = next(eg, None)
-    if email:
-        return flask.render_template('emailview.html',
-                                     email_id=email.id,
-                                     email_sender=email.sender,
-                                     email_recipient=email.recipient,
-                                     email_date=email.date,
-                                     email_subject=email.subject,
-                                     email_body=render_email_body(email.id),
-                                     form=form_value)
-    else:
-        flask.abort(404)
+        return flask.redirect(flask.url_for('login'))
 
 @app.route('/email/<int:email_id>/body/')
 def render_email_body(email_id):
-    eg = c.fetch_all_emails(column='id', query=email_id, exact_match=True)  # eg = email generator method
-    e = next(eg, None)
-    if e:
-        f = cStringIO.StringIO()
-        for line in e.enumerate_lines():
-            f.write(line + '&nbsp;<br />')  # have to add html newline or else it renders as a clump
-        return f.getvalue()
+    if 'username' in flask.session:
+        eg = c.fetch_all_emails(column='id', query=email_id, exact_match=True)  # eg = email generator method
+        e = next(eg, None)
+        if e:
+            f = cStringIO.StringIO()
+            for line in e.enumerate_lines():
+                f.write(line + '&nbsp;<br />')  # have to add html newline or else it renders as a clump
+            return f.getvalue()
+        else:
+            flask.abort(404)
     else:
-        flask.abort(404)
+        return flask.redirect(flask.url_for('login'))
 
 if __name__ == '__main__':
     app.debug = True

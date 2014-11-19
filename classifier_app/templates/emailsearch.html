@@ -1,0 +1,27 @@
+{% extends "master.html" %}
+
+{% block title %}Email Search{% endblock %}
+
+{% block extra_css %}
+    <link href="{{ url_for('static', filename='css/signin.css') }}" rel="stylesheet">
+{% endblock %}
+
+{% block navigation %}
+    <li><a href="{{ url_for('menu') }}">Home</a></li>
+    <li><a href="{{ url_for('classify') }}">Email Classifier</a></li>
+    <li class="active"><a href="#">Email Viewer</a></li>
+    <li><a href="#">Validator</a></li>
+    <li><a href="{{ url_for('logout') }}">Logout</a></li>
+{% endblock %}
+
+{% block page_title %}Specify Email ID{% endblock %}
+
+{% block body %}
+    <form class="form-signin" role="form" method="POST" action="{{ url_for('search_emails') }}">
+        <h2 class="form-signin-heading">Enter Email ID:</h2>
+        <p style="color: red; font-weight: bold;">{{ message }}</p>
+        <label for="email_id" class="sr-only">Email ID #</label>
+        <input type="text" id="email_id" name="email_id" class="form-control" placeholder="Email ID #" required autofocus>
+        <button class="btn btn-lg btn-primary btn-block" type="submit">View</button>
+    </form>
+{% endblock %}

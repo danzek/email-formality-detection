@@ -300,8 +300,8 @@ class Email():
         conn.text_factory = str
         cur = conn.execute(
             """
-            update EMAIL set Email Classification = ? where Email_ID = ?;
-            """, (self.classification, self.id))
+            update EMAIL set Email_Classification = ? where Email_ID = ?;
+            """, (self.classification, int(self.id)))
         conn.commit()
         conn.close()
 
