@@ -164,8 +164,22 @@ class Corpus():
 
         if classification:
             if classification.lower() == 'u' or classification.lower() == 'unclassified':
-                for email in self.fetch_all_emails(column='classification', query='u'):
-                    list_of_ids.append(email.id)
+                # this is too slow, especially since initially all emails are unclassified
+                #for email in self.fetch_all_emails(column='classification', query='u'):
+                    #list_of_ids.append(email.id)
+
+                # this revised method is much quicker for unclassified emails so long as they are the majority class
+                remaining_unclassified_emails = self.count_all_emails(classification='u')
+                if remaining_unclassified_emails > 0:
+                    while True:
+                        random_id = random.randrange(1, self.count_all_emails(classification='u')+1)
+                        eg = self.fetch_all_emails(column='id', query=str(random_id), exact_match=True)
+                        e = next(eg, None)
+                        if e:
+                            if e.classification == 'U':
+                                return e
+                else:
+                    return None
             elif classification.lower() == 'f' or classification.lower() == 'formal':
                 for email in self.fetch_all_emails(column='classification', query='f'):
                     list_of_ids.append(email.id)

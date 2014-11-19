@@ -1,15 +1,16 @@
 {% extends "master.html" %}
 
-{% block title %}Email Classifier{% endblock %}
+{% block title %}Email Viewer{% endblock %}
 
 {% block navigation %}
     <li><a href="{{ url_for('menu') }}">Home</a></li>
-    <li class="active"><a href="{{ url_for('classify') }}">Email Classifier</a></li>
+    <li><a href="{{ url_for('classify') }}">Email Classifier</a></li>
+    <li class="active"><a href="{{ url_for('search_emails') }}">Email Viewer</a></li>
     <li><a href="#">Validator</a></li>
     <li><a href="{{ url_for('logout') }}">Logout</a></li>
 {% endblock %}
 
-{% block page_title %}Email Classifier{% endblock %}
+{% block page_title %}Email Viewer{% endblock %}
 
 {% block body %}
     <div class="panel panel-default">
@@ -25,8 +26,7 @@
                     </dl>
                 </div>
                 <div class="col-md-3">
-                    <button type="button" class="btn btn-primary btn-lg btn-block">Formal</button><br />
-                    <button type="button" class="btn btn-danger btn-lg btn-block">Informal</button>
+                    {{ form|safe }}
                 </div>
             </div>
         </div>

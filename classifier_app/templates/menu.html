@@ -5,6 +5,7 @@
 {% block navigation %}
     <li class="active"><a href="#">Home</a></li>
     <li><a href="{{ url_for('classify') }}">Email Classifier</a></li>
+    <li><a href="{{ url_for('search_emails') }}">Email Viewer</a></li>
     <li><a href="#">Validator</a></li>
     <li><a href="{{ url_for('logout') }}">Logout</a></li>
 {% endblock %}
@@ -14,6 +15,10 @@
 {% block body %}
     <p>Welcome, {{ username }}!</p>
     <table class="table table-bordered">
+        <tr>
+            <td><a href="{{ url_for('search_emails') }}"><strong>Email Viewer</strong></a></td>
+            <td>View any email by specifying its ID/PK value..</td>
+        </tr>
         <tr>
             <td><a href="{{ url_for('classify') }}"><strong>Email Classifier</strong></a></td>
             <td>Classify random sample of emails as formal or informal.</td>

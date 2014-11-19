@@ -69,15 +69,37 @@ def menu():
 @app.route('/classify/')
 def classify():
     e = c.fetch_random_sample(classification='unclassified')
-    return flask.render_template('emailview.html',
-                                 email_id=e.id,
-                                 email_sender=e.sender,
-                                 email_recipient=e.recipient,
-                                 email_date=e.date,
-                                 email_subject=e.subject,
-                                 email_body=render_email_body(e.id))
+    if e:
+        return show_email(e.id, classify=True)
+    else:
+        flask.abort(404)
 
-@app.route('/emailbody/<int:email_id>')
+@app.route('/email/')
+def search_emails():
+    return 'test'
+
+@app.route('/email/<int:email_id>')
+def show_email(email_id, classify=False):
+    if classify:
+        form_value = '''<input class="btn btn-primary btn-lg btn-block" type="submit" value="Formal"><br />
+                        <input class="btn btn-danger btn-lg btn-block" type="submit" value="Informal">'''
+    else:
+        form_value = ""
+    eg = c.fetch_all_emails(column='id', query=email_id, exact_match=True)  # eg = email generator method
+    email = next(eg, None)
+    if email:
+        return flask.render_template('emailview.html',
+                                     email_id=email.id,
+                                     email_sender=email.sender,
+                                     email_recipient=email.recipient,
+                                     email_date=email.date,
+                                     email_subject=email.subject,
+                                     email_body=render_email_body(email.id),
+                                     form=form_value)
+    else:
+        flask.abort(404)
+
+@app.route('/email/<int:email_id>/body/')
 def render_email_body(email_id):
     eg = c.fetch_all_emails(column='id', query=email_id, exact_match=True)  # eg = email generator method
     e = next(eg, None)
