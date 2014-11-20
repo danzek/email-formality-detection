@@ -62,7 +62,15 @@ def logout():
 @app.route('/menu/')
 def menu():
     if 'username' in flask.session:
-        return flask.render_template('menu.html', username=flask.session['username'])
+        classified = c.count_all_emails(classification='c')
+        total = c.count_all_emails()
+        percentage_classified = classified / total
+        return flask.render_template('menu.html', username=flask.session['username'],
+                                     classified_num=str(classified),
+                                     total_num=str(total),
+                                     progress=str(percentage_classified),
+                                     progress2=str(percentage_classified),
+                                     progress_again=str(percentage_classified))
     else:
         return flask.redirect(flask.url_for('login'))
 

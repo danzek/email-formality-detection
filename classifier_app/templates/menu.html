@@ -29,4 +29,13 @@
                 sample of emails.</td>
         </tr>
     </table>
+
+    <h3>Classification Progress</h3>
+    <p><strong>{{ classified_num }} out of {{ total_num }} total emails have been classified.</strong> The goal is 10%.</p>
+    <p>More is better, but we'll do the best we can!</p>
+    <div class="progress">
+      <div class="progress-bar" role="progressbar" aria-valuenow="{{ progress }}" aria-valuemin="0" aria-valuemax="100" style="width: {{ progress2 }}%;">
+        {{ progress_again }}%
+      </div>
+    </div>
 {% endblock %}
