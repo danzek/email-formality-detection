@@ -27,7 +27,7 @@ __status__ = "Development"
 import flask
 from auth import authenticate_user, SECRET_KEY  # this file is not included on github for (hopefully) obvious reasons
 import sys
-sys.path.append("..")  # the next import won't work without this
+sys.path.append("..")  # the next import won't work without this, only for local site
 from data.models import Corpus
 import cStringIO
 
@@ -64,7 +64,7 @@ def menu():
     if 'username' in flask.session:
         classified = c.count_all_emails(classification='c')
         total = c.count_all_emails()
-        percentage_classified = classified / total
+        percentage_classified = float("{0:.2f}".format((float(classified) / total)*100))
         return flask.render_template('menu.html', username=flask.session['username'],
                                      classified_num=str(classified),
                                      total_num=str(total),
