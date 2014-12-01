@@ -23,3 +23,26 @@ License
 -------
 
 [MIT](https://github.com/danzek/email-formality-detection/blob/master/LICENSE)
+
+How to Test A Single Feature
+----------------------------
+
+Begin inside the directory where you've extracted this project. Using an interactive Python shell (symbolized by `>>>` below&mdash;**do not retype the prompt symbols**), do the following:
+
+    >>> from data.models import Corpus
+    
+Next import your feature(s):
+
+    >>> from features.myfeaturefile import myfeature
+
+Now instantiate the corpus and select a specific email by its ID number:
+
+    >>> c = Corpus()
+    >>> email_generator_object = c.fetch_all_emails(column="id", query="120000", exact_match=True)
+    >>> email = next(email_generator_object)
+
+Now you have the email object with the specified id. You can pass it to your previously imported feature by using the feature function name:
+
+    >>> myfeature(email)
+
+The feature should return the specified metric.
