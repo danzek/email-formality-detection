@@ -25,16 +25,28 @@ __status__ = "Development"
 
 
 import os
-import sqlite3
+import mysql.connector
+from mysql.connector import errorcode
 import pickle
 import random
 
 
 class Corpus():
-    """Corpus object."""
+    """Corpus object.
+
+        cnx -- mySQL connection object
+        cur -- mySQL cursor object
+    """
     def __init__(self):
-        """Initial parameter is relative path to the database, assumed to be in the same folder as this file."""
-        self.database_filename = os.path.join(os.path.dirname(__file__), 'enron.db')  # hardcode relative path to data
+        self.config = {
+            'user': 'cnit499nlt',
+            'password': 'ODay2Hinh4Jain1Shin1Wang1',  # not the actual password
+            'host': '127.0.0.1',
+            'database': 'enron',
+            'raise_on_warnings': True,
+        }
+        self.cnx = None
+        self.cur = None
 
     def build_sqlite_corpus(self, path_to_corpus):
         """Given the path to the unpacked corpus as available from https://www.cs.cmu.edu/~./enron/, parse data
@@ -65,9 +77,7 @@ class Corpus():
                               Options: ['unclassified', 'formal', 'informal', 'classified']
                               ('classified' means that email has been classified as either formal or informal)
         """
-        conn = sqlite3.connect(self.database_filename)
-        conn.text_factory = str
-        conn.row_factory = sqlite3.Row
+        self.c.dbconnect
 
         if not classification:
             sql = "select max(Email_ID) from EMAIL;"
@@ -75,11 +85,63 @@ class Corpus():
             sql = "select count(Email_ID) from EMAIL "
             sql += self.__get_classification_sql_where_clause(classification)
 
-        cur = conn.execute(sql)
-        count = cur.fetchone()[0]
+        self.c.cur.execute(sql)
+        count = self.c.cur.fetchone()[0]
 
-        conn.close()
+        self.c.dbdisconnect
         return count
+
+    def create_database(self):
+        try:
+            self.cur.execute("create database {} default character set 'utf8'".format("enron"))
+        except mysql.connector.Error as err:
+            print 'Failed to create database: {}'.format(err.msg)
+
+        self.create_db_table()
+        self.dbconnect()
+
+    def create_db_table(self):
+        """Create sqlite database table for emails (also creates database if needed)."""
+        print 'Creating EMAIL table...'
+        self.dbconnect()
+        try:
+            self.cur.execute(""" create table `EMAIL` (
+                                      Email_ID int not null, auto_increment primary key,
+                                      Email_Sender varchar(255) null,
+                                      Email_Recipient text null,
+                                      Email_Subject varchar(255) null,
+                                      Email_Date varchar(255) null,
+                                      Email_Body blob null,
+                                      Email_Origin_Folder varchar(255) null,
+                                      Email_Mailbox varchar(255) null,
+                                      Email_Classification char(1) null,
+                                      Email_Correct_Current_Message char(1) null
+                              ) DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci ENGINE=InnoDB;""")
+            print '\tEMAIL table created successfully.'
+        except mysql.connector.Error as err:
+            if err.errno == errorcode.ER_TABLE_EXISTS_ERROR:
+                print '\tTable already exists.'
+            else:
+                print err.msg
+
+        self.dbdisconnect()
+
+    def dbconnect(self):
+        try:
+            self.cnx = mysql.connector.connect(**self.config)
+            self.cur = self.cnx.cursor()
+        except mysql.connector.Error as err:
+            if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+                print 'Invalid username or password'
+            elif err.errno == errorcode.ER_BAD_DB_ERROR:
+                print 'Database not found. Creating database...'
+                self.create_database()
+            else:
+                print err.msg
+
+    def dbdisconnect(self):
+        if self.cnx:
+            self.cnx.close()
 
     def fetch_all_emails(self, column=None, query=None, exact_match=False):
         """Generator (coroutine) method to fetch all emails; returns one email object at a time. To use, do as
@@ -106,9 +168,7 @@ class Corpus():
             start_id -- if selecting a range of emails by id (pk), this is the first id of that range
             end_id -- if selecting a range of emails by id (pk), this is the last id of that range
         """
-        conn = sqlite3.connect(self.database_filename)
-        conn.text_factory = str
-        conn.row_factory = sqlite3.Row
+        self.dbconnect()
 
         DATABASE_COLUMNS = {
             'id': 'Email_ID',
@@ -135,16 +195,14 @@ class Corpus():
         else:
             sql += ";"
 
-        cur = conn.execute(sql)
+        self.cur.execute(sql)
 
-        for row in cur:
+        for (email_id, sender, recipient, subject, date, body, origin_folder, mailbox, classification, cm) in self.cur:
             e = Email(self)
-            e.assign_values(row['Email_ID'], row['Email_Sender'], row['Email_Recipient'], row['Email_Subject'],
-                            row['Email_Date'], row['Email_Body'], row['Email_Origin_Folder'], row['Email_Mailbox'],
-                            row['Email_Classification'])
+            e.assign_values(email_id, sender, recipient, subject, date, body, origin_folder, mailbox, classification, cm)
             yield e  # generator method
 
-        conn.close()
+        self.dbdisconnect()
 
     def fetch_random_sample(self, classification=None):
         """Fetches a random email sample: returns one email object; optionally filter by classification type. To use,
@@ -245,6 +303,8 @@ class Email():
             body -- email body stored in binary format (BLOB). Data is picked then written as binary. Use the provided
                     methods for retrieving email body to ensure data is unpickled and handled properly
                     (enumerate_lines() and enumerate_words())
+            current_message -- Whether or not current message has been extracted (used in framework validation), default
+                               is 'U' for unknown; other options are true and false ['U', 'T', 'F']
             CLASSIFICATION_TYPES -- for internal use only, convert plaintext classification to database character
             classification - single-character classification ['U', 'F', 'I']
             feature_set - feature vector (dictionary) storing extracted features from this object (populated with
@@ -259,6 +319,7 @@ class Email():
         self.date = ""
         self.subject = ""
         self.body = ""
+        self.current_message = "U"
 
         self.CLASSIFICATION_TYPES = {
             'Unclassified': 'U',
@@ -267,7 +328,7 @@ class Email():
         self.classification = self.CLASSIFICATION_TYPES['Unclassified']
         self.feature_set = {}
 
-    def assign_values(self, pk, sender, recipient, subject, date, body, origin_folder, mailbox, classification):
+    def assign_values(self, pk, sender, recipient, subject, date, body, origin_folder, mailbox, classification, cmsg):
         """Takes parameters that are optional when object is instantiated and assigns them to the object (see docstring
         for __init__.py for an explanation of each argument)."""
         self.id = pk
@@ -279,6 +340,7 @@ class Email():
         self.origin_folder = origin_folder
         self.mailbox = mailbox
         self.classification = classification
+        self.current_message = cmsg
 
     def add_feature(self, feature_id, value):
         """Adds a single new feature to the feature_set dictionary.
@@ -296,35 +358,11 @@ class Email():
             classification -- specify object classification ['Unclassified', 'Formal', 'Informal']
         """
         self.classification = self.CLASSIFICATION_TYPES[classification]
-        conn = sqlite3.connect(self.c.database_filename)
-        conn.text_factory = str
-        cur = conn.execute(
-            """
-            update EMAIL set Email_Classification = ? where Email_ID = ?;
-            """, (self.classification, int(self.id)))
-        conn.commit()
-        conn.close()
-
-    def create_db_table(self):
-        """Create sqlite database table for emails (also creates database if needed)."""
-        print 'Creating database...'
-        conn = sqlite3.connect(self.c.database_filename)  # uses db file path from Corpus object
-        cur = conn.cursor()
-
-        cur.execute(""" create table EMAIL (
-                          Email_ID integer primary key autoincrement not null,
-                          Email_Sender varchar null,
-                          Email_Recipient varchar null,
-                          Email_Subject varchar null,
-                          Email_Date varchar null,
-                          Email_Body blob null,
-                          Email_Origin_Folder varchar null,
-                          Email_Mailbox varchar null,
-                          Email_Classification int null
-                    );""")  # Email_Classification = 0 if deemed informal and 1 if formal
-        print '\tEMAIL table created successfully.'
-
-        conn.close()
+        self.c.dbconnect()
+        self.c.cur.execute(
+            "update EMAIL set Email_Classification = %s where Email_ID = %s", (self.classification, int(self.id)))
+        self.c.cnx.commit()
+        self.c.dbdisconnect()
 
     def enumerate_lines(self):
         """Generator (coroutine) numerates lines in email body. Use like so:
@@ -353,11 +391,6 @@ class Email():
             mailbox -- name of direct parent folder in which email was extracted
         """
         valid_email = True
-
-        # check if database already exists; if not, create it
-        if not os.path.isfile(self.c.database_filename):
-            print 'A database with this name does not yet exist.'
-            self.create_db_table()
 
         try:
             f = open(email_file, 'r')
@@ -427,13 +460,14 @@ class Email():
     def save_email(self):
         """Saves email to database."""
         if not self.__is_missing_values():
-            conn = sqlite3.connect(self.c.database_filename)
-            conn.text_factory = str
-            cur = conn.execute(
-                """
-                insert into EMAIL (Email_Sender, Email_Recipient, Email_Subject, Email_Date, Email_Body,
-                Email_Origin_Folder, Email_Mailbox, Email_Classification) values (?, ?, ?, ?, ?, ?, ?, ?);
-                """, (self.sender, self.recipient, self.subject, self.date, sqlite3.Binary(self.body),
-                self.origin_folder, self.mailbox, self.classification))
-            conn.commit()
-            conn.close()
+            self.c.dbconnect()
+            sql = """insert into EMAIL (Email_Sender, Email_Recipient, Email_Subject, Email_Date, Email_Body,
+                    Email_Origin_Folder, Email_Mailbox, Email_Classification) values (?, ?, ?, ?, ?, ?, ?, ?);
+                    """, (self.sender, self.recipient, self.subject, self.date, self.body, self.origin_folder,
+                          self.mailbox, self.classification)
+            try:
+                self.c.cur.execute(sql)
+                self.c.cnx.commit()
+            except mysql.connector.Error as err:
+                print 'Could not save email: {}'.format(err.msg)
+            self.c.dbdisconnect()
