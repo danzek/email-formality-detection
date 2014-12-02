@@ -396,11 +396,22 @@ class Email():
         Needs more work/improvement.
         """
         most_recent_body = []
-        for line in self.body:
-            if "-----Original Message-----" in line or "---------------------- Forwarded" in line:
-                self.body = most_recent_body
-            else:
-                most_recent_body.append(line)
+        older_message_discriminators = [
+            "----Original Message",
+            "====Original Message",
+            "----- Forwarded",
+            "-----Forwarded",
+            "===== Forwarded",
+            "=====Forwarded",
+        ]
+
+        for line in self.enumerate_lines():
+            for discriminator in older_message_discriminators:
+                if (discriminator in line) or line.startswith('>'):
+                    self.body = most_recent_body
+                    return
+
+            most_recent_body.append(line)
 
     def __is_missing_values(self):
         """Checks if email is missing important values. Private method."""

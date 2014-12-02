@@ -26,6 +26,7 @@ __status__ = "Development"
 
 from data.models import Corpus
 from features.simple_counts import average_syllables_per_word, character_count, syllable_count, word_count
+from features.netlingo import find_netlingo
 
 
 def process_features(email):
@@ -55,6 +56,9 @@ def process_features(email):
 
     feature_dictionary[3] = "Word Count"
     email.add_feature(3, word_count(email))
+
+    feature_dictionary[4] = "Net Lingo Term Count"
+    email.add_feature(4, find_netlingo(email))
 
     # new features go here
 
