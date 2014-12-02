@@ -36,6 +36,7 @@ def main():
         sys.exit(1)
 
     c = Corpus()
+    c.create_db_table()
     c.build_sqlite_corpus(path_to_corpus)
 
 

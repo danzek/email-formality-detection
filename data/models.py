@@ -25,8 +25,7 @@ __status__ = "Development"
 
 
 import os
-import mysql.connector
-from mysql.connector import errorcode
+import MySQLdb
 import pickle
 import random
 
@@ -38,15 +37,7 @@ class Corpus():
         cur -- mySQL cursor object
     """
     def __init__(self):
-        self.config = {
-            'user': 'cnit499nlt',
-            'password': 'ODay2Hinh4Jain1Shin1Wang1',  # not the actual password
-            'host': '127.0.0.1',
-            'database': 'enron',
-            'raise_on_warnings': True,
-        }
-        self.cnx = None
-        self.cur = None
+        self.conn = MySQLdb.connect('mysql.server', 'cnit499nlt', 'haha_no_not_on_github_:)', 'cnit499nlt$enron')
 
     def build_sqlite_corpus(self, path_to_corpus):
         """Given the path to the unpacked corpus as available from https://www.cs.cmu.edu/~./enron/, parse data
@@ -77,7 +68,6 @@ class Corpus():
                               Options: ['unclassified', 'formal', 'informal', 'classified']
                               ('classified' means that email has been classified as either formal or informal)
         """
-        self.c.dbconnect
 
         if not classification:
             sql = "select max(Email_ID) from EMAIL;"
@@ -85,28 +75,20 @@ class Corpus():
             sql = "select count(Email_ID) from EMAIL "
             sql += self.__get_classification_sql_where_clause(classification)
 
-        self.c.cur.execute(sql)
-        count = self.c.cur.fetchone()[0]
+        with self.conn:
+            cur = self.conn.cursor()
+            cur.execute(sql)
+            count = cur.fetchone()[0]
 
-        self.c.dbdisconnect
         return count
-
-    def create_database(self):
-        try:
-            self.cur.execute("create database {} default character set 'utf8'".format("enron"))
-        except mysql.connector.Error as err:
-            print 'Failed to create database: {}'.format(err.msg)
-
-        self.create_db_table()
-        self.dbconnect()
 
     def create_db_table(self):
         """Create sqlite database table for emails (also creates database if needed)."""
         print 'Creating EMAIL table...'
-        self.dbconnect()
-        try:
-            self.cur.execute(""" create table `EMAIL` (
-                                      Email_ID int not null, auto_increment primary key,
+        with self.conn:
+            cur = self.conn.cursor()
+            cur.execute(""" create table `EMAIL` (
+                                      Email_ID int not null auto_increment primary key,
                                       Email_Sender varchar(255) null,
                                       Email_Recipient text null,
                                       Email_Subject varchar(255) null,
@@ -118,30 +100,6 @@ class Corpus():
                                       Email_Correct_Current_Message char(1) null
                               ) DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci ENGINE=InnoDB;""")
             print '\tEMAIL table created successfully.'
-        except mysql.connector.Error as err:
-            if err.errno == errorcode.ER_TABLE_EXISTS_ERROR:
-                print '\tTable already exists.'
-            else:
-                print err.msg
-
-        self.dbdisconnect()
-
-    def dbconnect(self):
-        try:
-            self.cnx = mysql.connector.connect(**self.config)
-            self.cur = self.cnx.cursor()
-        except mysql.connector.Error as err:
-            if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
-                print 'Invalid username or password'
-            elif err.errno == errorcode.ER_BAD_DB_ERROR:
-                print 'Database not found. Creating database...'
-                self.create_database()
-            else:
-                print err.msg
-
-    def dbdisconnect(self):
-        if self.cnx:
-            self.cnx.close()
 
     def fetch_all_emails(self, column=None, query=None, exact_match=False):
         """Generator (coroutine) method to fetch all emails; returns one email object at a time. To use, do as
@@ -168,7 +126,6 @@ class Corpus():
             start_id -- if selecting a range of emails by id (pk), this is the first id of that range
             end_id -- if selecting a range of emails by id (pk), this is the last id of that range
         """
-        self.dbconnect()
 
         DATABASE_COLUMNS = {
             'id': 'Email_ID',
@@ -195,14 +152,17 @@ class Corpus():
         else:
             sql += ";"
 
-        self.cur.execute(sql)
+        with self.conn:
+            cur = self.conn.cursor(MySQLdb.cursors.DictCursor)
+            cur.execute(sql)
+            rows = cur.fetchall()
 
-        for (email_id, sender, recipient, subject, date, body, origin_folder, mailbox, classification, cm) in self.cur:
-            e = Email(self)
-            e.assign_values(email_id, sender, recipient, subject, date, body, origin_folder, mailbox, classification, cm)
-            yield e  # generator method
-
-        self.dbdisconnect()
+            for row in rows:
+                e = Email(self)
+                e.assign_values(row['Email_ID'], row['Email_Sender'], row['Email_Recipient'], row['Email_Subject'],
+                                row['Email_Date'], row['Email_Body'], row['Email_Origin_Folder'], row['Email_Mailbox'],
+                                row['Email_Classification'], row['Email_Correct_Current_Message'])
+                yield e  # generator method
 
     def fetch_random_sample(self, classification=None):
         """Fetches a random email sample: returns one email object; optionally filter by classification type. To use,
@@ -358,11 +318,11 @@ class Email():
             classification -- specify object classification ['Unclassified', 'Formal', 'Informal']
         """
         self.classification = self.CLASSIFICATION_TYPES[classification]
-        self.c.dbconnect()
-        self.c.cur.execute(
-            "update EMAIL set Email_Classification = %s where Email_ID = %s", (self.classification, int(self.id)))
-        self.c.cnx.commit()
-        self.c.dbdisconnect()
+        with self.c.conn:
+            cur = self.c.conn.cursor()
+            cur.execute(
+                "update EMAIL set Email_Classification = %s where Email_ID = %s", (self.classification, int(self.id)))
+            self.c.conn.commit()
 
     def enumerate_lines(self):
         """Generator (coroutine) numerates lines in email body. Use like so:
@@ -460,14 +420,11 @@ class Email():
     def save_email(self):
         """Saves email to database."""
         if not self.__is_missing_values():
-            self.c.dbconnect()
-            sql = """insert into EMAIL (Email_Sender, Email_Recipient, Email_Subject, Email_Date, Email_Body,
-                    Email_Origin_Folder, Email_Mailbox, Email_Classification) values (?, ?, ?, ?, ?, ?, ?, ?);
-                    """, (self.sender, self.recipient, self.subject, self.date, self.body, self.origin_folder,
-                          self.mailbox, self.classification)
-            try:
-                self.c.cur.execute(sql)
-                self.c.cnx.commit()
-            except mysql.connector.Error as err:
-                print 'Could not save email: {}'.format(err.msg)
-            self.c.dbdisconnect()
+            with self.c.conn:
+                cur = self.c.conn.cursor()
+                sql = """insert into EMAIL (Email_Sender, Email_Recipient, Email_Subject, Email_Date, Email_Body,
+                        Email_Origin_Folder, Email_Mailbox, Email_Classification) values (?, ?, ?, ?, ?, ?, ?, ?);
+                        """, (self.sender, self.recipient, self.subject, self.date, self.body, self.origin_folder,
+                              self.mailbox, self.classification)
+                cur.execute(sql)
+                self.c.conn.commit()
