@@ -294,8 +294,6 @@ class Email():
             'Informal': 'I'}
         self.classification = self.CLASSIFICATION_TYPES['Unclassified']
         self.feature_set = {}
-        self.DB_PASSWORD = 'haha_no_not_on_github_:)'  # real password not uploaded to Github
-        self.conn = MySQLdb.connect('mysql.server', 'cnit499nlt', self.DB_PASSWORD, 'cnit499nlt$enron')
 
     def assign_values(self, pk, sender, recipient, subject, date, body, origin_folder, mailbox, classification, cmsg):
         """Takes parameters that are optional when object is instantiated and assigns them to the object (see docstring
@@ -327,14 +325,12 @@ class Email():
             classification -- specify object classification ['Unclassified', 'Formal', 'Informal']
         """
         self.classification = self.CLASSIFICATION_TYPES[classification]
-        self.dbconnect()
-        with self.conn:
-            cur = self.conn.cursor()
-            cur.execute("update EMAIL set Email_Classification = %s where Email_ID = %s", (self.classification, int(self.id)))
-            self.conn.commit()
-
-    def db_connect(self):
-        self.conn = MySQLdb.connect('mysql.server', 'cnit499nlt', self.DB_PASSWORD, 'cnit499nlt$enron')
+        self.c.db_connect()
+        with self.c.conn:
+            cur = self.c.conn.cursor()
+            cur.execute(
+                "update EMAIL set Email_Classification = %s where Email_ID = %s", (self.classification, int(self.id)))
+            self.c.conn.commit()
 
     def enumerate_lines(self):
         """Generator (coroutine) numerates lines in email body. Use like so:
@@ -432,13 +428,13 @@ class Email():
     def save_email(self):
         """Saves email to database."""
         if not self.__is_missing_values():
-            self.dbconnect()
-            with self.conn:
-                cur = self.conn.cursor()
+            self.c.db_connect()
+            with self.c.conn:
+                cur = self.c.conn.cursor()
                 sql = """insert into EMAIL (Email_Sender, Email_Recipient, Email_Subject, Email_Date, Email_Body,
                         Email_Origin_Folder, Email_Mailbox, Email_Classification) values (%s, %s, %s, %s, %s, %s, %s, %s);
                         """
                 params = (self.sender, self.recipient, self.subject, self.date, self.body, self.origin_folder,
                           self.mailbox, self.classification)
                 cur.execute(sql, params)
-                self.conn.commit()
+                self.c.conn.commit()
