@@ -27,11 +27,22 @@ from decimal import *
 
 #if I have time, I'll add in the time zones method to standardize time
 
+def weekend(email):
+	#the day function below this will already parse it
+	dayValue = day(email)
+
+	if dayValue == 0 or dayValue == 6:
+		weekend = 1
+	else:
+		weekend = 0
+
+	return weekend
+
 def day(email):
 	fullDateCaptureSTR = str(email.date)
 	fullDateCaptureLIST = fullDateCaptureSTR.split(' ')
-
-	dayOfWeekRAW = fullDateCaptureLIST[1]
+	
+	dayOfWeekRAW = fullDateCaptureLIST[0]
 	#removing that comma
 	#day of week
 	day = dayOfWeekRAW[0:-1]
@@ -54,17 +65,15 @@ def day(email):
 	elif day == 'Sat':
 		day = 6
 
-	print(day)
+	return day
 
 def time(email):
 	fullDateCaptureSTR = str(email.date)
 	fullDateCaptureLIST = fullDateCaptureSTR.split(' ')
-	
+	print(fullDateCaptureLIST)
 	#day date
-	time = str(fullDateCaptureLIST[5][0:5])
-	
-	hour = int(time[0:2])
-	
+	hour = int(fullDateCaptureLIST[4][0:2])
+
 	#4 hour increments
 	#0,4,8,12,16,20
 	if hour >= 0 and hour < 4:
