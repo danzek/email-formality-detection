@@ -37,7 +37,8 @@ class Corpus():
         cur -- mySQL cursor object
     """
     def __init__(self):
-        self.conn = MySQLdb.connect('mysql.server', 'cnit499nlt', 'haha_no_not_on_github_:)', 'cnit499nlt$enron')
+        self.DB_PASSWORD = 'haha_no_not_on_github_:)'  # real password not uploaded to Github
+        self.conn = MySQLdb.connect('mysql.server', 'cnit499nlt', self.DB_PASSWORD, 'cnit499nlt$enron')
 
     def build_sqlite_corpus(self, path_to_corpus):
         """Given the path to the unpacked corpus as available from https://www.cs.cmu.edu/~./enron/, parse data
@@ -75,6 +76,7 @@ class Corpus():
             sql = "select count(Email_ID) from EMAIL "
             sql += self.__get_classification_sql_where_clause(classification)
 
+        self.db_connect()
         with self.conn:
             cur = self.conn.cursor()
             cur.execute(sql)
@@ -85,6 +87,7 @@ class Corpus():
     def create_db_table(self):
         """Create sqlite database table for emails (also creates database if needed)."""
         print 'Creating EMAIL table...'
+        self.db_connect()
         with self.conn:
             cur = self.conn.cursor()
             cur.execute(""" create table `EMAIL` (
@@ -100,6 +103,9 @@ class Corpus():
                                       Email_Correct_Current_Message char(1) null
                               ) DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci ENGINE=InnoDB;""")
             print '\tEMAIL table created successfully.'
+
+    def db_connect(self):
+        self.conn = MySQLdb.connect('mysql.server', 'cnit499nlt', self.DB_PASSWORD, 'cnit499nlt$enron')
 
     def fetch_all_emails(self, column=None, query=None, exact_match=False):
         """Generator (coroutine) method to fetch all emails; returns one email object at a time. To use, do as
@@ -152,6 +158,7 @@ class Corpus():
         else:
             sql += ";"
 
+        self.db_connect()
         with self.conn:
             cur = self.conn.cursor(MySQLdb.cursors.DictCursor)
             cur.execute(sql)
@@ -318,6 +325,7 @@ class Email():
             classification -- specify object classification ['Unclassified', 'Formal', 'Informal']
         """
         self.classification = self.CLASSIFICATION_TYPES[classification]
+        self.c.dbconnect()
         with self.c.conn:
             cur = self.c.conn.cursor()
             cur.execute(
@@ -420,11 +428,13 @@ class Email():
     def save_email(self):
         """Saves email to database."""
         if not self.__is_missing_values():
+            self.c.dbconnect()
             with self.c.conn:
                 cur = self.c.conn.cursor()
                 sql = """insert into EMAIL (Email_Sender, Email_Recipient, Email_Subject, Email_Date, Email_Body,
-                        Email_Origin_Folder, Email_Mailbox, Email_Classification) values (?, ?, ?, ?, ?, ?, ?, ?);
-                        """, (self.sender, self.recipient, self.subject, self.date, self.body, self.origin_folder,
-                              self.mailbox, self.classification)
-                cur.execute(sql)
+                        Email_Origin_Folder, Email_Mailbox, Email_Classification) values (%s, %s, %s, %s, %s, %s, %s, %s);
+                        """
+                params = (self.sender, self.recipient, self.subject, self.date, self.body, self.origin_folder,
+                          self.mailbox, self.classification)
+                cur.execute(sql, params)
                 self.c.conn.commit()
