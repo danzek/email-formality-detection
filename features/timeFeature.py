@@ -20,40 +20,66 @@ __maintainer__ = "Dan O'Day"
 __email__ = "doday@purdue.edu"
 __status__ = "Development"
 
+
 #importing the libraries
 import codecs,re,datetime,calendar,os,glob
 from decimal import *
 
+#if I have time, I'll add in the time zones method to standardize time
+
 def day(email):
-	fullDateCaptureLIST = email.time
-	
+	fullDateCaptureSTR = str(email.date)
+	fullDateCaptureLIST = fullDateCaptureSTR.split(' ')
+
 	dayOfWeekRAW = fullDateCaptureLIST[1]
 	#removing that comma
 	#day of week
 	day = dayOfWeekRAW[0:-1]
 
-	return day
+	#just using an if-statement. I assume email.date is a string object anyways and not a date object
+	#but in theory, if email.date is a date object, then use this:
+	#.weekday() - 0 is Monday
+	if day == 'Sun':
+		day = 0
+	elif day == 'Mon':
+		day = 1
+	elif day == 'Tue':
+		day = 2
+	elif day == 'Wed':
+		day = 3
+	elif day == 'Thu':
+		day = 4
+	elif day == 'Fri':
+		day = 5
+	elif day == 'Sat':
+		day = 6
+
+	print(day)
 
 def time(email):
-	fullDateCaptureLIST = email.time
-
+	fullDateCaptureSTR = str(email.date)
+	fullDateCaptureLIST = fullDateCaptureSTR.split(' ')
+	
 	#day date
 	time = str(fullDateCaptureLIST[5][0:5])
 	
 	hour = int(time[0:2])
 	
-	#half hour increments
-	#for example - say it is 12.5, then the email was sent between 12:30 and 12:59:59
-	#for example - say it is 12.0, then the email was sent between 12:0 and 12:29:59
-	if (int(time[3:5]) < 30):
-		halfHourIncrement = 0
-	elif int(time[3:5]) > 30 and int(time[3:5]) < 60:
-		halfHourIncrement = .5
-	
-	time = float(hour + halfHourIncrement)
-	#making sure this will always be to the tenth place
-	time = Decimal(time).quantize(Decimal('0.0'))
-	
+	#4 hour increments
+	#0,4,8,12,16,20
+	if hour >= 0 and hour < 4:
+		range = 0
+	elif hour >= 4 and hour < 8:
+		range = 1
+	elif hour >= 8 and hour < 12:
+		range = 2
+	elif hour >= 12 and hour < 16:
+		range = 3
+	elif hour >= 16 and hour < 20:
+		range = 4
+	elif hour >= 20 and hour < 0:
+		range = 5
+
 	#time extracted from the emails are sent in a 24-hour format
-	return time
+	return range
 
