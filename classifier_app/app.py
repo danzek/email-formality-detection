@@ -65,12 +65,20 @@ def menu():
         classified = c.count_all_emails(classification='c')
         total = c.count_all_emails()
         percentage_classified = float("{0:.2f}".format((float(classified) / total)*100))
+        validated_correct = c.count_all_emails(validated='t')
+        total_validated = c.count_all_emails(validated='a')
+        percentage_validated_correctly = float("{0:.2f}".format((float(validated_correct) / total_validated)*100))
         return flask.render_template('menu.html', username=flask.session['username'],
                                      classified_num=str(classified),
                                      total_num=str(total),
                                      progress=str(percentage_classified),
                                      progress2=str(percentage_classified),
-                                     progress_again=str(percentage_classified))
+                                     progress_again=str(percentage_classified),
+                                     correct_num=str(validated_correct),
+                                     total_num_validated=str(total_validated),
+                                     progress3=str(percentage_validated_correctly),
+                                     progress4=str(percentage_validated_correctly),
+                                     progress_otra_vez=str(percentage_validated_correctly))
     else:
         return flask.redirect(flask.url_for('login'))
 
@@ -151,18 +159,82 @@ def show_email(email_id, classify=False):
     else:
         return flask.redirect(flask.url_for('login'))
 
-@app.route('/email/<int:email_id>/body/')
-def render_email_body(email_id):
+@app.route('/compare-email/<int:email_id>')
+def show_side_by_side_emails(email_id):
     if 'username' in flask.session:
+        form_value = '<a class="btn btn-success btn-lg btn-block" href="' + flask.url_for('validate_email',
+                     email_pk=email_id, correct='T') + '" role="button">Correct</a><br />' + \
+                     '<a class="btn btn-danger btn-lg btn-block" href="' + flask.url_for('validate_email',
+                     email_pk=email_id, correct='F') + '" role="button">Incorrect</a>'
         eg = c.fetch_all_emails(column='id', query=email_id, exact_match=True)  # eg = email generator method
-        e = next(eg, None)
-        if e:
-            f = cStringIO.StringIO()
-            for line in e.enumerate_lines():
-                f.write(line + '&nbsp;<br />')  # have to add html newline or else it renders as a clump
-            return f.getvalue()
+        email = next(eg, None)
+        if email:
+            class_types = {
+                'U': 'UNCLASSIFIED',
+                'F': 'FORMAL',
+                'I': 'INFORMAL'
+            }
+            return flask.render_template('emailvalidatorview.html',
+                                         email_id=email.id,
+                                         email_class=class_types[email.classification],
+                                         email_sender=email.sender,
+                                         email_recipient=email.recipient,
+                                         email_date=email.date,
+                                         email_subject=email.subject,
+                                         email_body1=render_email_body(email.id),
+                                         email_body2=render_email_body(email.id, email),
+                                         form=form_value)
         else:
             flask.abort(404)
+    else:
+        return flask.redirect(flask.url_for('login'))
+
+@app.route('/email/<int:email_id>/body/')
+def render_email_body(email_id, email=None):
+    if 'username' in flask.session:
+        if not email:
+            eg = c.fetch_all_emails(column='id', query=email_id, exact_match=True)  # eg = email generator method
+            e = next(eg, None)
+            if e:
+                f = cStringIO.StringIO()
+                for line in e.enumerate_lines():
+                    f.write(line + '&nbsp;<br />')  # have to add html newline or else it renders as a clump
+                body = f.getvalue()
+                f.close()
+                return body
+            else:
+                flask.abort(404)
+        else:
+            email.get_current_message()
+            f = cStringIO.StringIO()
+            for line in email.enumerate_lines():
+                f.write(line + '&nbsp;<br />')  # have to add html newline or else it renders as a clump
+            body = f.getvalue()
+            f.close()
+            return body
+    else:
+        return flask.redirect(flask.url_for('login'))
+
+@app.route('/validate/')
+def validate():
+    if 'username' in flask.session:
+        e = c.fetch_random_sample(validated='u')
+        if e:
+            return show_side_by_side_emails(e.id)
+        else:
+            flask.abort(404)
+    else:
+        return flask.redirect(flask.url_for('login'))
+
+@app.route('/validate-email/<int:email_pk>/<correct>')
+def validate_email(email_pk, correct):
+    if 'username' in flask.session:
+        eg = c.fetch_all_emails(column='id', query=str(email_pk), exact_match=True)
+        e = next(eg, None)
+        if e:
+            e.validate(correct)
+
+        return flask.redirect('validate')
     else:
         return flask.redirect(flask.url_for('login'))
 

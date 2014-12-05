@@ -6,7 +6,7 @@
     <li class="active"><a href="#">Home</a></li>
     <li><a href="{{ url_for('classify') }}">Email Classifier</a></li>
     <li><a href="{{ url_for('search_emails') }}">Email Viewer</a></li>
-    <li><a href="#">Validator</a></li>
+    <li><a href="{{ url_for('validate') }}">Validator</a></li>
     <li><a href="{{ url_for('logout') }}">Logout</a></li>
 {% endblock %}
 
@@ -24,19 +24,31 @@
             <td>Classify random sample of emails as formal or informal.</td>
         </tr>
         <tr>
-            <td><a href="#"><strong>Current Message Extraction Validator</strong></a></td>
-            <td>(NOT IMPLEMENTED YET) Validate framework's ability to determine most recent message from random
-                sample of emails.</td>
+            <td><a href="{{ url_for('validate') }}"><strong>Current Message Extraction Validator</strong></a></td>
+            <td>Validate framework's ability to determine most recent message from random
+                sample of emails. <a href="{{ url_for('incorrect_list') }}">View incorrectly rendered emails.</a></td>
         </tr>
     </table>
 
     <h3>Classification Progress</h3>
-    <p><strong>{{ classified_num }} out of {{ total_num }} total emails have been classified.</strong> The goal is 10%.</p>
+    <p><strong>{{ classified_num }} out of {{ total_num }} total emails have been classified.</strong> The goal is
+        1%.</p>
     <p>More is better, but we'll do the best we can!</p>
     <div class="progress">
-      <div class="progress-bar" role="progressbar" aria-valuenow="{{ progress }}" aria-valuemin="0" aria-valuemax="100" style="width: {{ progress2 }}%;">
+      <div class="progress-bar" role="progressbar" aria-valuenow="{{ progress }}" aria-valuemin="0" aria-valuemax="100"
+           style="width: {{ progress2 }}%;">
         {{ progress_again }}%
       </div>
     </div>
-    <p><strong>(Test Data Only)</strong></p>
+
+    <hr />
+
+    <p><strong>The get_current_message() method correctly rendered {{ correct_num }} out of {{ total_num_validated }}
+        total validated emails.</strong></p>
+    <div class="progress">
+      <div class="progress-bar" role="progressbar" aria-valuenow="{{ progress3 }}" aria-valuemin="0" aria-valuemax="100"
+           style="width: {{ progress4 }}%;">
+        {{ progress_otra_vez }}%
+      </div>
+    </div>
 {% endblock %}

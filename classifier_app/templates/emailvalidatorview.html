@@ -1,0 +1,53 @@
+{% extends "master.html" %}
+
+{% block title %}Email Viewer{% endblock %}
+
+{% block navigation %}
+    <li><a href="{{ url_for('menu') }}">Home</a></li>
+    <li><a href="{{ url_for('classify') }}">Email Classifier</a></li>
+    <li><a href="{{ url_for('search_emails') }}">Email Viewer</a></li>
+    <li class="active"><a href="#">Validator</a></li>
+    <li><a href="{{ url_for('logout') }}">Logout</a></li>
+{% endblock %}
+
+{% block page_title %}Email Validator{% endblock %}
+
+{% block body %}
+    <div class="panel panel-default">
+        <div class="row">
+            <div class="col-md-11">
+                The email on the left is the original message. The email on the right is the same email after running
+                the get_current_message() method. The goal of this method is to eliminate forwarded messages
+                and other previous messages still existing in the email body so that feature extraction only takes place
+                on the <em>current</em> message. Please determine whether or not the email was correctly rendered by this
+                method. If there is no previous message, then the email should be the same on both sides&mdash;that would
+                be correct. However, if the email is a forward or reply, the original message should be removed from the
+                email body on the right.
+            </div>
+        </div>
+        <div class="panel-heading">
+            <div class="row">
+                <div class="col-md-9">
+                    <dl class="dl-horizontal">
+                        <dt>Email ID:</dt><dd>{{ email_id }} ({{ email_class }})</dd>
+                        <dt>From:</dt><dd>{{ email_sender }}</dd>
+                        <dt>To:</dt><dd>{{ email_recipient }}</dd>
+                        <dt>Date:</dt><dd>{{ email_date }}</dd>
+                        <dt>Subject:</dt><dd>{{ email_subject }}</dd>
+                    </dl>
+                </div>
+                <div class="col-md-3">
+                    {{ form|safe }}
+                </div>
+            </div>
+        </div>
+        <div class="panel-body">
+            <div class="col-md-6">
+                {{ email_body1|safe }}
+            </div>
+            <div class="col-md-6">
+                {{ email_body2|safe }}
+            </div>
+        </div>
+    </div>
+{% endblock %}

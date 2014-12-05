@@ -61,7 +61,7 @@ class Corpus():
 
         print 'Finished creating SQLite corpus.'
 
-    def count_all_emails(self, classification=None):
+    def count_all_emails(self, classification=None, validated=None):
         """Count all emails in SQLite database, optionally count by classification type
 
         Optional arguments:
@@ -70,11 +70,19 @@ class Corpus():
                               ('classified' means that email has been classified as either formal or informal)
         """
 
-        if not classification:
+        if not classification and not validated:
             sql = "select max(Email_ID) from EMAIL;"
-        else:
+        elif classification and not validated:
             sql = "select count(Email_ID) from EMAIL "
             sql += self.__get_classification_sql_where_clause(classification)
+        elif not classification and validated:
+            sql = "select count(Email_ID) from EMAIL where Email_Correct_Current_Message"
+            if validated.lower() == 'u':
+                sql += "='U'"
+            elif validated.lower() == 't':
+                sql += "='T'"
+            elif validated.lower() == 'a':
+                sql += "<>'U'"
 
         self.db_connect()
         with self.conn:
@@ -125,7 +133,8 @@ class Corpus():
 
         Optional arguments:
             column -- specify a column by which to filter. Options are:
-                      ['id', 'mailbox', 'origin_folder', 'sender', 'recipient', 'date', 'subject', 'classification']
+                      ['id', 'mailbox', 'origin_folder', 'sender', 'recipient', 'date', 'subject', 'classification',
+                      'validated']
             query -- value by which to filter specified column
             exact_match -- boolean, defaults to False. True will require an exact match (SQL '=' operator), and
                            False will perform a search using the specified query (SQL 'LIKE' operator).
@@ -140,7 +149,8 @@ class Corpus():
             'sender': 'Email_Sender',
             'recipient': 'Email_Recipient',
             'date': 'Email_Date',
-            'subject': 'Email_Subject'
+            'subject': 'Email_Subject',
+            'validated': 'Email_Correct_Current_Message',
         }
 
         # matching exact_match to SQL operators
@@ -171,7 +181,7 @@ class Corpus():
                                 row['Email_Classification'], row['Email_Correct_Current_Message'])
                 yield e  # generator method
 
-    def fetch_random_sample(self, classification=None):
+    def fetch_random_sample(self, classification=None, validated=None):
         """Fetches a random email sample: returns one email object; optionally filter by classification type. To use,
         do as follows (where c is the instantiated Corpus object):
 
@@ -214,9 +224,25 @@ class Corpus():
             elif classification.lower() == 'c' or classification.lower() == 'classified':
                 for email in self.fetch_all_emails(column='classification', query='c'):
                     list_of_ids.append(email.id)
-        else:
-            for email in self.fetch_all_emails():
-                list_of_ids.append(email.id)
+
+        if validated:
+            # this revised method is much quicker for unvalidated emails so long as they are the majority class
+            if validated.lower() == 'u':
+                total_emails = self.count_all_emails()
+                while True:
+                    random_id = random.randrange(1, total_emails+1)
+                    eg = self.fetch_all_emails(column='id', query=str(random_id), exact_match=True)
+                    e = next(eg, None)
+                    if e:
+                        #if e.current_message == 'U':
+                        return e
+            if validated.lower() == 't':
+                for email in self.fetch_all_emails(column='validated', query='T', exact_match=True):
+                    list_of_ids.append(email.id)
+            if validated.lower() == 'f':
+                for email in self.fetch_all_emails(column='validated', query='F', exact_match=True):
+                    list_of_ids.append(email.id)
+
 
         # if list has values, choose a random list index and pass the generator function to eg (email generator)
         if list_of_ids:
@@ -438,3 +464,24 @@ class Email():
                           self.mailbox, self.classification)
                 cur.execute(sql, params)
                 self.c.conn.commit()
+
+    def validate(self, valid):
+        """Classify an email.
+
+        Arguments:
+            valid -- Whether or not current message was retrieved (True or False)
+        """
+        if valid=='T':
+            self.current_message = 'T'
+        elif valid=='F':
+            self.current_message = 'F'
+        else:
+            return
+
+        self.c.db_connect()
+        with self.c.conn:
+            cur = self.c.conn.cursor()
+            cur.execute(
+                "update EMAIL set Email_Correct_Current_Message = %s where Email_ID = %s",
+                (self.current_message, int(self.id)))
+            self.c.conn.commit()
