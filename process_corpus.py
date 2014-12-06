@@ -33,6 +33,7 @@ from features.closing import closing
 from features.count_recipients import count_recipients
 from features.capitalization import ratio_incorrect_first_capitalization, punctRatio, \
     incorrect_first_person_pronoun_capitalization_count, ratio_cap_letters
+from features.spelling import ratio_misspelled_words
 
 
 def process_features(email):
@@ -95,6 +96,9 @@ def process_features(email):
 
     feature_dictionary[14] = "Ratio of contiguous capital letters to total letters"
     email.add_feature(14, ratio_cap_letters(email))
+
+    feature_dictionary[15] = "Ratio of misspelled words to total words"
+    email.add_feature(15, ratio_misspelled_words(email))
 
     # new features go here
 
