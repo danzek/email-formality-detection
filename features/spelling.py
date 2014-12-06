@@ -1,6 +1,7 @@
 __author__ = ['Upasita', 'Sangmi']
 
 import re
+import os
 
 
 def ratio_misspelled_words(email):
@@ -30,7 +31,7 @@ def ratio_misspelled_words(email):
         source.remove('')  # remove empty entries
     except:
         pass
-    f = open('misspelling.txt', 'r')  # list of common misspellings
+    f = open(os.path.join(os.path.dirname(__file__), 'misspelling.txt'), 'r')  # list of common misspellings
     for misspell in f:
         for word in source:
             if misspell.lstrip().lower().replace('\n', '') == word.lstrip().lower():

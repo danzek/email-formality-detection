@@ -4,6 +4,7 @@
 __author__ = 'Sangmi'
 
 from data.models import Corpus
+import os
 
 
 def total_list():
@@ -15,9 +16,9 @@ def total_list():
     """
     c = Corpus()
     try:
-        f2 = open('recipient_list_set.txt', 'r')
+        f2 = open(os.path.join(os.path.dirname(__file__), 'recipient_list_set.txt'), 'r')
     except IOError:
-        f2 = open('recipient_list_set.txt', 'a')
+        f2 = open(os.path.join(os.path.dirname(__file__), 'recipient_list_set.txt'), 'a')
         r_set = set() # recipient set
         for i in range (1,490682): # id from 1 to 490682
             el = c.fetch_all_emails(column="id", query=i, exact_match=True)
@@ -40,7 +41,7 @@ def group_list():
     :return: a set of group recipients (type: set)
     """
     try:
-        f4 = open('recipient_group_list.txt','r') # text file of group emailing list
+        f4 = open(os.path.join(os.path.dirname(__file__), 'recipient_group_list.txt'),'r') # text file of group emailing list
         group_set = set()
         for line in f4:
             if line is not '\n' or line is not '\r\n':
@@ -52,10 +53,10 @@ def group_list():
         f4.close()
     except IOError:
         try:
-            f3 = open('recipient_list_set.txt','r')
+            f3 = open(os.path.join(os.path.dirname(__file__), 'recipient_list_set.txt'),'r')
         except IOError:
             total_list() # creates recipient_list_set.txt
-            f3 = open('recipient_list_set.txt','r')
+            f3 = open(os.path.join(os.path.dirname(__file__), 'recipient_list_set.txt'),'r')
         group_set = set()
         for line in f3:
             if line.startswith('all.') or line.startswith('enron.'):
@@ -66,7 +67,7 @@ def group_list():
             group_set.remove('')
         except KeyError:
             pass
-        f4 = open('recipient_group_list.txt','a')
+        f4 = open(os.path.join(os.path.dirname(__file__), 'recipient_group_list.txt'),'a')
         for g in group_set:
             f4.write(g + '\n')
         f4.close()

@@ -4,6 +4,9 @@
 __author__ = 'Sangmi'
 
 
+import os
+
+
 def closing(email):
     """
     Finds email (letter) closing.
@@ -13,7 +16,7 @@ def closing(email):
     result = 0  # 0: none, 1: closing exists
 
     # open closing list file
-    f = open('closings.txt', 'r')
+    f = open(os.path.join(os.path.dirname(__file__), 'closings.txt'), 'r')
     # f = open('test.txt', 'r')
     closings = f.read().split("\n")  # e.g. ["Sincerely,", "Best regards,", "Yours Faithfully,"]
     f.close()
