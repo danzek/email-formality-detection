@@ -24,9 +24,10 @@ __email__ = "doday@purdue.edu"
 __status__ = "Development"
 
 
+import re
 from nltk.tokenize.punkt import PunktSentenceTokenizer, PunktParameters
 punkt_param = PunktParameters()
-punkt_param.abbrev_types = set(['dr', 'vs', 'mr', 'mrs', 'ms', 'prof', 'inc', 'viz'])
+punkt_param.abbrev_types = set(['dr', 'vs', 'mr', 'mrs', 'ms', 'prof', 'inc', 'viz', 'cf'])
 
 
 def clean_up(sentences):
@@ -41,7 +42,8 @@ def clean_up(sentences):
     cleaned_up_sentence_list = []
 
     for s in sentences:
-        if s.endswith('e.g.') or s.endswith('i.e.'):
+        if s.lower().endswith('e.g.') or s.lower().endswith('i.e.') or s.lower().endswith('p.s.') \
+                or s.lower().endswith('f.y.i.') or s.lower().endswith('m.s.') or s.lower().endswith('b.s.'):
             indexes_to_concatenate.append(i)
         i += 1
 
@@ -79,6 +81,36 @@ def prepare_email(email):
     """Handles email object and returns list of sentences so that only one method must be used."""
     text = create_text_from_body(email)
     return split_sentences(text)
+
+
+def punctuation(email):
+    listOutput = prepare_email(email)
+
+    punctFilter = re.compile("[\!?]{2,}")
+    exFilter = re.compile("[\!]{2,}")
+    quesFilter = re.compile("[\?]{2,}")
+    periodFilter = re.compile("[\.]{4,}")
+    punct_count = 0
+
+    for i in listOutput:
+        if re.search(punctFilter, i) or re.search(periodFilter, i) or re.search(exFilter, i) or re.search(quesFilter, i):
+            punct_count += 1
+
+    return punct_count
+
+
+def punctRatio(email):
+    listOutput = prepare_email(email)
+
+    punct_count = punctuation(email)
+    sentence_count = len(listOutput)
+
+    try:
+        punct_Ratio = "%.1f" % ((float(punct_count) / sentence_count) * 100)
+    except ZeroDivisionError:
+        punct_Ratio = 0.0
+
+    return punct_Ratio
 
 
 def ratio_incorrect_first_capitalization(email):

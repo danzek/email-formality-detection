@@ -31,7 +31,7 @@ from features.contractionFeature import contraction
 from features.timeFeature import weekend, day, time
 from features.closing import closing
 from features.count_recipients import count_recipients
-from features.capitalization import ratio_incorrect_first_capitalization
+from features.capitalization import ratio_incorrect_first_capitalization, punctRatio
 
 
 def process_features(email):
@@ -65,7 +65,7 @@ def process_features(email):
     feature_dictionary[4] = "Net Lingo Term Count"
     email.add_feature(4, find_netlingo(email))
 
-    feature_dictionary[5] = "Contractions"
+    feature_dictionary[5] = "Contractions to All Words Ratio"
     email.add_feature(5, contraction(email))
 
     feature_dictionary[6] = "Weekend"
@@ -85,6 +85,9 @@ def process_features(email):
 
     feature_dictionary[11] = "Ratio of Sentences Not Beginning With Capital Letters"
     email.add_feature(11, ratio_incorrect_first_capitalization(email))
+
+    feature_dictionary[12] = "Ratio of Excessive Punctuation to Normal Punctuation"
+    email.add_feature(12, punctRatio(email))
 
     # new features go here
 
