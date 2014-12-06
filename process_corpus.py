@@ -31,6 +31,7 @@ from features.contractionFeature import contraction
 from features.timeFeature import weekend, day, time
 from features.closing import closing
 from features.count_recipients import count_recipients
+from features.capitalization import ratio_incorrect_first_capitalization
 
 
 def process_features(email):
@@ -79,8 +80,11 @@ def process_features(email):
     feature_dictionary[9] = "Closing Count"
     email.add_feature(9, closing(email))
 
-    feature_dictionary[10] = "Count Recipients"
+    feature_dictionary[10] = "Recipients Count"
     email.add_feature(10, count_recipients(email))
+
+    feature_dictionary[11] = "Ratio of Sentences Not Beginning With Capital Letters"
+    email.add_feature(11, ratio_incorrect_first_capitalization(email))
 
     # new features go here
 
