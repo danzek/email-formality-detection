@@ -31,7 +31,8 @@ from features.contractionFeature import contraction
 from features.timeFeature import weekend, day, time
 from features.closing import closing
 from features.count_recipients import count_recipients
-from features.capitalization import ratio_incorrect_first_capitalization, punctRatio
+from features.capitalization import ratio_incorrect_first_capitalization, punctRatio, \
+    incorrect_first_person_pronoun_capitalization_count, ratio_cap_letters
 
 
 def process_features(email):
@@ -88,6 +89,12 @@ def process_features(email):
 
     feature_dictionary[12] = "Ratio of Excessive Punctuation to Normal Punctuation"
     email.add_feature(12, punctRatio(email))
+
+    feature_dictionary[13] = "Incorrect Capitalization of 'i' Count"
+    email.add_feature(13, incorrect_first_person_pronoun_capitalization_count(email))
+
+    feature_dictionary[14] = "Ratio of contiguous capital letters to total letters"
+    email.add_feature(14, ratio_cap_letters(email))
 
     # new features go here
 

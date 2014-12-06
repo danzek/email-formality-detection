@@ -47,6 +47,11 @@ def clean_up(sentences):
             indexes_to_concatenate.append(i)
         i += 1
 
+    # circumvents bug in NLTK PunktTokenizer that separates last ! or ? in contiguous punctuation occurring at end of
+    # sentence as a separate sentence
+    if (len(sentences[-1].strip()) == 1) and (sentences[-1].strip() == '!' or sentences[-1].strip() == '?'):
+        del sentences[-1]
+
     i = 0  # re-initialize index
 
     if len(indexes_to_concatenate) > 0:
@@ -64,9 +69,24 @@ def clean_up(sentences):
     return cleaned_up_sentence_list
 
 
+def count_letters_except_first_cap(sent_list):
+    """
+    :param sent_list:
+    :return (total letters - capital letters at beginning of sentences):
+    """
+    letter_count = 0
+    for sent in sent_list:
+        #if sent[0].isalpha() is True and sent[0].islower() is True: # if the first letter is not capitalized
+        #    letter_count += 1
+        for letter in sent[1:]: # count letters from the second letter
+            if letter.isalpha() is True: # count only alphabets
+                letter_count += 1
+    return letter_count
+
+
 def count_sentences(email):
     """Returns total number of sentences in email body."""
-    return len(prepare_email(email))
+    return len(filter(None, prepare_email(email)))
 
 
 def create_text_from_body(email):
@@ -75,6 +95,18 @@ def create_text_from_body(email):
     for line in email.enumerate_lines():
         text += line + ' '
     return text
+
+
+def incorrect_first_person_pronoun_capitalization_count(email):
+    sentences = prepare_email(email)
+    pattern = re.compile(r"[\s]*[i]{1}[\s!?;:]+")
+    count = 0
+    for s in sentences:
+        hits = pattern.findall(s)
+        lowercase_first_person_singular_pronoun_count = len(hits)
+        if lowercase_first_person_singular_pronoun_count > 0:
+            count += lowercase_first_person_singular_pronoun_count
+    return count
 
 
 def prepare_email(email):
@@ -111,6 +143,48 @@ def punctRatio(email):
         punct_Ratio = 0.0
 
     return punct_Ratio
+
+
+def ratio_cap_letters(email):
+#def ratio_cap_letters(sent_list): # for testing
+    """
+    calculates the ratio of upper case letters except for at the beginning of the sentence
+    # percentage = a/(b-c)
+    # a: total contiguously capitalized letters NOT at the beginning of sentence
+    # b: total letters
+    # c: capital letters at beginning of sentence
+    e.g. Instances where capital letters DO NOT naturally follow periods
+     --> returns 5
+    :param email:
+    :return:
+    """
+    sent_list = prepare_email(email)
+    # filters the empty email from the beginning.
+    if len(sent_list) == 0:  # if empty email --> return 0.00
+        return 0.00
+
+    letter_count = count_letters_except_first_cap(sent_list)
+    count = 0
+    for sent in sent_list:
+        word_list = sent.lstrip().split()
+        word_list = filter(None, word_list)
+        # print(word_list)
+        try:
+            first_word = str(word_list[0])
+            if len(first_word)>=2 and first_word.isupper() is True:  # first word of the sentence
+                count += len(first_word) - 1  # except for the capital letter at the first
+            for word in word_list[1:]:  # after the first word of the sentence
+                if len(word) >= 2 and word.isupper() is True: # e.g. don't consider "I" or "team A"
+                    count += len(word)
+        except IndexError:  # when the word is None value
+            pass
+
+    # percentage = a/(b-c)
+    # a: total contiguously capitalized letters NOT at the beginning of sentence
+    # b: total letters
+    # c: capital letters at beginning of sentence
+    percentage = round(float(count)/letter_count, 2)
+    return percentage
 
 
 def ratio_incorrect_first_capitalization(email):
