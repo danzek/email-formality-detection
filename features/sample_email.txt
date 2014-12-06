@@ -1,0 +1,10 @@
+Hello Upasita,
+
+This is a sample email text to test your features against, e.g. the identification of sentence boundaries, capitalization, etc. I've 
+intentionally done some things in this email that do indeed naturally occur in the Enron corpus (i.e. instances where capital letters DO NOT naturally
+follow periods, examples where they do, and capitalization in other places
+UNRELATED to the beginning of sentences. Dr. Julia Taylor would likely want us to take such things into account. You're doing a good job, I just wanted to give you some additional confounding variables to take into account. Thanks,
+
+Mr. Dan O'Day, M.S. Technology
+Blah Blah Blah
+Purdue University

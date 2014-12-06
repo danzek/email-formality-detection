@@ -373,9 +373,12 @@ class Email():
         for word in email.enumerate_words():
             print word  # do something with word
         """
+        words = []
         for line in self.enumerate_lines():
-            for word in line:
-                yield word  # generator method
+            words.extend(line.split(' '))
+
+        for word in words:
+            yield word  # generator method
 
     def extract_fields(self, email_file, mailbox):
         """Extracts fields from email file and saves them to database.

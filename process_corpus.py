@@ -27,6 +27,10 @@ __status__ = "Development"
 from data.models import Corpus
 from features.simple_counts import average_syllables_per_word, character_count, syllable_count, word_count
 from features.netlingo import find_netlingo
+from features.contractionFeature import contraction
+from features.timeFeature import weekend, day, time
+from features.closing import closing
+from features.count_recipients import count_recipients
 
 
 def process_features(email):
@@ -59,6 +63,24 @@ def process_features(email):
 
     feature_dictionary[4] = "Net Lingo Term Count"
     email.add_feature(4, find_netlingo(email))
+
+    feature_dictionary[5] = "Contractions"
+    email.add_feature(5, contraction(email))
+
+    feature_dictionary[6] = "Weekend"
+    email.add_feature(6, weekend(email))
+
+    feature_dictionary[7] = "Day"
+    email.add_feature(7, day(email))
+
+    feature_dictionary[8] = "Time"
+    email.add_feature(8, time(email))
+
+    feature_dictionary[9] = "Closing Count"
+    email.add_feature(9, closing(email))
+
+    feature_dictionary[10] = "Count Recipients"
+    email.add_feature(10, count_recipients(email))
 
     # new features go here
 
