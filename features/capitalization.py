@@ -183,7 +183,10 @@ def ratio_cap_letters(email):
     # a: total contiguously capitalized letters NOT at the beginning of sentence
     # b: total letters
     # c: capital letters at beginning of sentence
-    percentage = round(float(count)/letter_count, 2)
+    try:
+        percentage = round(float(count)/letter_count, 2)
+    except ZeroDivisionError:
+        percentage = 0.0
     return percentage
 
 

@@ -87,7 +87,7 @@ def time(email):
         range = 3
     elif hour >= 16 and hour < 20:
         range = 4
-    elif hour >= 20 and hour < 0:
+    elif hour >= 20 and hour < 24:
         range = 5
 
     # time extracted from the emails are sent in a 24-hour format

@@ -121,7 +121,12 @@ def write_libsvm_file(all=True):
     with open('features.libsvm', 'w') as ff:
         c = Corpus()
 
-        for email in c.fetch_all_emails():
+        if all:
+            email_generator = c.fetch_all_emails()
+        else:
+            email_generator = c.fetch_all_emails(column='classification', query='classified')
+
+        for email in email_generator:
             email.get_current_message()  # make sure only dealing with most recent message
             feature_dictionary, classifier_to_write_to_file = process_features(email)
 
@@ -155,7 +160,8 @@ def write_csv_file(all=True):
             tmp.extend(feature_dictionary.values())
             features.append(tmp)
         email_features = []
-        email_features.append(email.id, classifier_to_write_to_file)
+        email_features.append(email.id)
+        email_features.append(classifier_to_write_to_file)
         email_features.extend(email.feature_set.values())
         features.append(email_features)
         i += 1

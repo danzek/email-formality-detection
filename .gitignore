@@ -26,3 +26,5 @@ data/classifier_app/auth.py
 classifier_app/auth.py
 
 data/20141202backup.sql
+
+*.csv
