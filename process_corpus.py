@@ -24,8 +24,10 @@ __email__ = "doday@purdue.edu"
 __status__ = "Development"
 
 
+import csv
 from data.models import Corpus
-from features.simple_counts import average_syllables_per_word, character_count, syllable_count, word_count
+from features.simple_counts import average_syllables_per_word, character_count, syllable_count, word_count, \
+    is_forward, is_reply, subject_line_counts
 from features.netlingo import find_netlingo
 from features.contractionFeature import contraction
 from features.timeFeature import weekend, day, time
@@ -40,12 +42,12 @@ def process_features(email):
     classifier_to_write_to_file = ""
     feature_dictionary = {}  # stores human-readable names for each feature
 
-    # determine classification; if unclassified then 0, if informal then 1, if formal then 2
-    if email.classification == 'U':
+    # determine classification; if unclassified then 2, if informal then 0, if formal then 1
+    if email.classification == 'I':
         classifier_to_write_to_file = "0"
-    elif email.classification == 'I':
-        classifier_to_write_to_file = "1"
     elif email.classification == 'F':
+        classifier_to_write_to_file = "1"
+    elif email.classification == 'U':
         classifier_to_write_to_file = "2"
 
     # process each email with each feature, and add the id of the feature and a description of it to the
@@ -100,18 +102,28 @@ def process_features(email):
     feature_dictionary[15] = "Ratio of misspelled words to total words"
     email.add_feature(15, ratio_misspelled_words(email))
 
-    # new features go here
+    feature_dictionary[16] = "Is Forward?"
+    email.add_feature(16, is_forward(email))
 
-    return classifier_to_write_to_file
+    feature_dictionary[17] = "Is Reply?"
+    email.add_feature(17, is_reply(email))
+
+    feature_dictionary[18] = "Subject Line Reply Count"
+    email.add_feature(18, subject_line_counts(email, 'reply'))
+
+    feature_dictionary[19] = "Subject Line Forward Count"
+    email.add_feature(19, subject_line_counts(email, 'forward'))
+
+    return feature_dictionary, classifier_to_write_to_file
 
 
-def main():
+def write_libsvm_file(all=True):
     with open('features.libsvm', 'w') as ff:
         c = Corpus()
 
         for email in c.fetch_all_emails():
             email.get_current_message()  # make sure only dealing with most recent message
-            classifier_to_write_to_file = process_features(email)
+            feature_dictionary, classifier_to_write_to_file = process_features(email)
 
             # write feature set for this sample to file
             ff.write(classifier_to_write_to_file)
@@ -120,6 +132,40 @@ def main():
 
             ff.write(" # email id: " + str(email.id))  # add comment to libsvm file with unique id for sample
             ff.write("\n")  # new line for next sample
+
+
+def write_csv_file(all=True):
+    ff = open('features.csv', 'w')
+    csv_writer = csv.writer(ff)
+    c = Corpus()
+    features = []
+
+    if all:
+        email_generator = c.fetch_all_emails()
+    else:
+        email_generator = c.fetch_all_emails(column='classification', query='classified')
+
+    i = 0
+
+    for email in email_generator:
+        email.get_current_message()  # make sure only dealing with most recent message
+        feature_dictionary, classifier_to_write_to_file = process_features(email)
+        if i == 0:
+            tmp = ['Email ID#', 'Classification']
+            tmp.extend(feature_dictionary.values())
+            features.append(tmp)
+        email_features = []
+        email_features.append(email.id, classifier_to_write_to_file)
+        email_features.extend(email.feature_set.values())
+        features.append(email_features)
+        i += 1
+
+    csv_writer.writerows(features)
+
+
+def main():
+    # write_libsvm_file()
+    write_csv_file(all=False)
 
 
 if __name__ == '__main__':

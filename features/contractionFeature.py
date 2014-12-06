@@ -52,23 +52,23 @@ def contraction(email):
         # filtering each element in the list to find words with the apostrophe
         # NOTE - in the English language, double (and hell, even triple) contractions exist. But no matter how many
         # contraction parts are present in a word, that would just increase the contraction_count by 1
-        if word.endswith("'t"):
+        if word.lower().endswith("'t"):
             contraction_count += 1
-        elif word.endswith("'ve"):
+        elif word.lower().endswith("'ve"):
             contraction_count += 1
-        elif word.endswith("'d"):
+        elif word.lower().endswith("'d"):
             contraction_count += 1
-        elif word.endswith("'ll"):
+        elif word.lower().endswith("'ll"):
             contraction_count += 1
-        elif word.endswith("'s"):
+        elif word.lower().endswith("'s"):
             contraction_count += 1
-        elif word.endswith("'m"):
+        elif word.lower().endswith("'m"):
             contraction_count += 1
-        elif word.endswith("'am"):
+        elif word.lower().endswith("'am"):
             contraction_count += 1
-        elif word.endswith("'re"):
+        elif word.lower().endswith("'re"):
             contraction_count += 1
-        elif word.endswith("'all"):
+        elif word.lower().endswith("'all"):
             contraction_count += 1
 
     # obtaining the total number of words in the msg

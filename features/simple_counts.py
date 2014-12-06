@@ -24,6 +24,7 @@ __email__ = "doday@purdue.edu"
 __status__ = "Development"
 
 
+import re
 from nltk import word_tokenize, pos_tag
 from nltk.corpus import cmudict  # Carnegie Mellon Pronouncing Dictionary used for finding syllables
 
@@ -69,8 +70,34 @@ def count_verbs(email):
     tagged_text = pos_tag(word_tokenize(s))
     for word, tag in tagged_text:
         if tag.startswith('VB'):
-            count +=1
+            count += 1
     return count
+
+
+def is_forward(email):
+    if 'fw:' in email.subject.lower():
+        return 1
+    else:
+        return 0
+
+
+def is_reply(email):
+    if 're:' in email.subject.lower():
+        return 1
+    else:
+        return 0
+
+
+def subject_line_counts(email, type):
+    if type.lower() == 'reply':
+        subject_capture = re.compile(r"(re:){1}")
+    elif type.lower() == 'forward':
+        subject_capture = re.compile(r"(fw:|fwd:){1}")
+
+    subject = email.subject.lower()
+    list_of_matches = (list(subject_capture.findall(subject)))
+    return len(list_of_matches)
+
 
 def syllable_count(email):
     count = 0
