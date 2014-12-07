@@ -41,9 +41,9 @@ from features.spelling import ratio_misspelled_words
 
 def populate_word_features(all=True):
     c = Corpus()
-    all_word_features = set([])
+    all_word_features = []
 
-    print 'Preprocessing unigram and bigram features...'
+    print 'Preprocessing unigram features...'
 
     if all:
         email_generator = c.fetch_all_emails()
@@ -156,7 +156,7 @@ def process_features(email, wf):
     email.add_feature(i, subject_line_counts(email, 'forward'))
     i += 1
 
-    # word features (unigrams and bigrams)
+    # word features (unigrams only)
     email_text = create_text_from_body(email)
     email_word_features = extract_words_as_features(email_text)
     for feature in wf:
@@ -191,7 +191,10 @@ def write_libsvm_file(wf, all=True):
                 string_builder += " %s:%s" % f
 
             # ff.write(" # email id: " + str(email.id))  # add comment to libsvm file with unique id for sample
-            ff.write(string_builder + '\n')
+            try:
+                ff.write(string_builder + '\n')
+            except IOError:
+                pass
 
 
 def write_csv_file(wf, all=True):
