@@ -28,7 +28,7 @@ import csv
 from data.models import Corpus
 from features.bagofwords import extract_words_as_features
 from features.simple_counts import average_syllables_per_word, character_count, syllable_count, word_count, \
-    is_forward, is_reply, subject_line_counts
+    is_forward, is_reply, subject_line_counts, count_verbs
 from features.netlingo import find_netlingo
 from features.contractionFeature import contraction
 from features.timeFeature import weekend, day, time
@@ -112,7 +112,7 @@ def process_features(email, wf):
     email.add_feature(i, time(email))
     i += 1
 
-    feature_dictionary[i] = "Closing Count"
+    feature_dictionary[i] = "Closing Present"
     email.add_feature(i, closing(email))
     i += 1
 
@@ -154,6 +154,10 @@ def process_features(email, wf):
 
     feature_dictionary[i] = "Subject Line Forward Count"
     email.add_feature(i, subject_line_counts(email, 'forward'))
+    i += 1
+
+    feature_dictionary[i] = "Verb Count"
+    email.add_feature(i, count_verbs(email))
     i += 1
 
     # word features (unigrams only)
