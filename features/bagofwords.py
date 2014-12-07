@@ -38,8 +38,3 @@ def extract_words_as_features(text):
     tokens = tokenizer.tokenize(text)
     unigrams = set([x.lower() for x in tokens if x not in stopwords.words('english') and len(x) > 2])
     return list(unigrams)
-
-
-def word_features(email, all_word_features):
-    for wf in all_word_features:
-        pass
