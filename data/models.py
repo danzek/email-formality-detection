@@ -179,6 +179,7 @@ class Corpus():
                 e.assign_values(row['Email_ID'], row['Email_Sender'], row['Email_Recipient'], row['Email_Subject'],
                                 row['Email_Date'], row['Email_Body'], row['Email_Origin_Folder'], row['Email_Mailbox'],
                                 row['Email_Classification'], row['Email_Correct_Current_Message'])
+
                 yield e  # generator method
 
     def fetch_random_sample(self, classification=None, validated=None):

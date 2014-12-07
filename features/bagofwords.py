@@ -36,5 +36,5 @@ def extract_words_as_features(text):
     text = text.translate(string.maketrans("",""), string.punctuation)  # eliminates punctuation
     tokenizer = WordPunctTokenizer()
     tokens = tokenizer.tokenize(text)
-    unigrams = set([x.lower() for x in tokens if x not in stopwords.words('english') and len(x) > 2])
+    unigrams = set([x.lower() for x in tokens if x not in stopwords.words('english') and len(x) > 3])
     return list(unigrams)
