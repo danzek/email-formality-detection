@@ -156,9 +156,9 @@ def process_features(email, wf):
     email.add_feature(i, subject_line_counts(email, 'forward'))
     i += 1
 
-    feature_dictionary[i] = "Verb Count"
-    email.add_feature(i, count_verbs(email))
-    i += 1
+    # feature_dictionary[i] = "Verb Count"
+    # email.add_feature(i, count_verbs(email))
+    # i += 1
 
     # word features (unigrams only)
     email_text = create_text_from_body(email)
