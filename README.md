@@ -24,6 +24,11 @@ License
 
 [MIT](https://github.com/danzek/email-formality-detection/blob/master/LICENSE)
 
+Database
+--------
+
+Thhe `mysql` branch is the main branch with all of the features and up-to-date code. However, the `master` branch uses sqlite rather than MySQL, and is thus easier to run and develop locally. Initial development took place with sqlite, but eventually moved to MySQL since that is the most efficient supported database type on PythonAnywhere hosting service.
+
 How to Test A Single Feature
 ----------------------------
 
