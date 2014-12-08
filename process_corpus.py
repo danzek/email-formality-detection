@@ -164,6 +164,7 @@ def process_features(email, wf):
     email_text = create_text_from_body(email)
     email_word_features = extract_words_as_features(email_text)
     for feature in wf:
+        feature = feature.lower()
         feature_dictionary[i] = feature
         if feature in email_word_features:
             fv = 1
@@ -180,9 +181,9 @@ def write_libsvm_file(wf, all=True):
         c = Corpus()
 
         if all:
-            email_generator = c.fetch_all_emails()
+            email_generator = c.fetch_many_emails()
         else:
-            email_generator = c.fetch_all_emails(column='classification', query='classified')
+            email_generator = c.fetch_many_emails(column='classification', query='classified')
 
         for email in email_generator:
             email.get_current_message()  # make sure only dealing with most recent message
@@ -208,9 +209,9 @@ def write_csv_file(wf, all=True):
     features = []
 
     if all:
-        email_generator = c.fetch_all_emails()
+        email_generator = c.fetch_many_emails()
     else:
-        email_generator = c.fetch_all_emails(column='classification', query='classified')
+        email_generator = c.fetch_many_emails(column='classification', query='classified')
 
     i = 0
 

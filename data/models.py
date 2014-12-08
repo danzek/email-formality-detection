@@ -168,6 +168,8 @@ class Corpus():
         else:
             sql += ";"
 
+        list_of_pks = []
+
         self.db_connect()
         with self.conn:
             cur = self.conn.cursor(MySQLdb.cursors.DictCursor)
@@ -177,10 +179,55 @@ class Corpus():
             for row in rows:
                 e = Email(self)
                 e.assign_values(row['Email_ID'], row['Email_Sender'], row['Email_Recipient'], row['Email_Subject'],
-                                row['Email_Date'], row['Email_Body'], row['Email_Origin_Folder'], row['Email_Mailbox'],
-                                row['Email_Classification'], row['Email_Correct_Current_Message'])
+                                row['Email_Date'], row['Email_Body'], row['Email_Origin_Folder'],
+                                row['Email_Mailbox'], row['Email_Classification'],
+                                row['Email_Correct_Current_Message'])
 
                 yield e  # generator method
+
+    def fetch_many_emails(self, column=None, query=None, exact_match=False):
+        # workaround for large query sets
+        DATABASE_COLUMNS = {
+            'id': 'Email_ID',
+            'mailbox': 'Email_Mailbox',
+            'origin_folder': 'Email_Origin_Folder',
+            'sender': 'Email_Sender',
+            'recipient': 'Email_Recipient',
+            'date': 'Email_Date',
+            'subject': 'Email_Subject',
+            'validated': 'Email_Correct_Current_Message',
+        }
+
+        # matching exact_match to SQL operators
+        operator = 'like'  # since exact_match is False by default
+        if exact_match:
+            operator = '='
+
+        # constructing sql query
+        # I verified that SQLite requires no special handling for id, this still works even when treated as a string
+        sql = "select Email_ID from EMAIL "
+        if column and query and column != 'classification':
+            sql += "where " + DATABASE_COLUMNS[column] + " " + operator + " '" + str(query) + "';"
+        elif column and query and column == 'classification':
+            sql += self.__get_classification_sql_where_clause(query)
+        else:
+            sql += ";"
+
+        list_of_pks = []
+
+        self.db_connect()
+        with self.conn:
+            cur = self.conn.cursor(MySQLdb.cursors.DictCursor)
+            cur.execute(sql)
+            rows = cur.fetchall()
+
+            for row in rows:
+                list_of_pks.append(row['Email_ID'])
+
+        for pk in list_of_pks:
+            eg = self.fetch_all_emails(column='id', query=str(pk), exact_match=True)
+            e = next(eg, None)
+            yield e
 
     def fetch_random_sample(self, classification=None, validated=None):
         """Fetches a random email sample: returns one email object; optionally filter by classification type. To use,
